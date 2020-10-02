@@ -2,10 +2,12 @@
 //DESCRIPTION:  Module for add and sub, this module is total combinational logic.
 //DATA:         2020-10-02
 //AUTHOR:       Thimble Liu
-//INTERFACE:
-//              input : add_sub -- 0 for add; 1 for sub.
-//                      a, b;
-//              output: overflow, result.
+//
+//INTERFACE:    I/O     NAME        DESCRIPTION
+//              input : add_sub     (0 for add, 1 for sub).
+//                      a, b        (two 32-bit data input);
+//              output: overflow 
+//                      result      (32-bit).
 
 module add_sub(
     add_sub, a, b, overflow, result
@@ -38,12 +40,12 @@ module add_sub(
     //For subtraction, overflow is high when signs of two operators are different, and
     //  the result of subtraction has the same sign from the second operator.
     //Truth table for overflow:
-    //  add_sub  a[31]   b[31]  result[31]  |   overflow
-    //  --------------------------------------------------
-    //      0      0       0        1       |       1
-    //      0      1       1        0       |       1
-    //      1      0       1        1       |       1
-    //      1      1       0        0       |       1
+    //                   add_sub  a[31]   b[31]  result[31]  |   overflow
+    //                   --------------------------------------------------
+    //                       0      0       0        1       |       1
+    //                       0      1       1        0       |       1
+    //                       1      0       1        1       |       1
+    //                       1      1       0        0       |       1
     assign overflow =   ~add_sub & ~a[31] & ~b[31] &  result[31] |
                         ~add_sub &  a[31] &  b[31] & ~result[31] |
                          add_sub & ~a[31] &  b[31] &  result[31] |
