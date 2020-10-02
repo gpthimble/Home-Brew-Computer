@@ -1,8 +1,11 @@
-//Module for add and sub, this module is total combinational logic.
-//Interface:
-//  input : add_sub -- 0 for add; 1 for sub.
-//         a, b;
-//  output: overflow, result.
+//FILE:         add_sub.v
+//DESCRIPTION:  Module for add and sub, this module is total combinational logic.
+//DATA:         2020-10-02
+//AUTHOR:       Thimble Liu
+//INTERFACE:
+//              input : add_sub -- 0 for add; 1 for sub.
+//                      a, b;
+//              output: overflow, result.
 
 module add_sub(
     add_sub, a, b, overflow, result
