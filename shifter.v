@@ -1,7 +1,7 @@
 //FILE:         shifter.v
 //DESCRIPTION:  Module for shift operation, this module is total combinational logic.
 //                This module also implements the LUI instruction.
-//DATA:         2020-10-02
+//DATE:         2020-10-02
 //AUTHOR:       Thimble Liu
 //
 //INTERFACE:    I/O     NAME        DESCRIPTION

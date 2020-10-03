@@ -1,13 +1,13 @@
 //FILE:         add_sub.v
 //DESCRIPTION:  Module for add and sub, this module is total combinational logic.
-//DATA:         2020-10-02
+//DATE:         2020-10-02
 //AUTHOR:       Thimble Liu
 //
 //INTERFACE:    I/O     NAME        DESCRIPTION
-//              input : add_sub     (0 for add, 1 for sub).
-//                      a, b        (two 32-bit data input);
+//              input : add_sub     0 for add, 1 for sub.
+//                      a, b        two 32-bit data input
 //              output: overflow 
-//                      result      (32-bit).
+//                      result      32-bit
 
 module add_sub(
     add_sub, a, b, overflow, result

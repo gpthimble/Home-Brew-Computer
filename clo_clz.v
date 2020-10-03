@@ -4,13 +4,13 @@
 //              Examples: input   data: 1111 0001 0000 0000 0000 0000 0000 0000 
 //                                one_or_zero: 1 (CLO Count Leading Ones)
 //                        output   4 in decimal for there're 4 ones leading. 
-//DATA:         2020-10-02
+//DATE:         2020-10-02
 //AUTHOR:       Thimble Liu
 //
 //INTERFACE:    I/O     NAME        DESCRIPTION
-//              input : data        (32-bit)
-//                      one_or_zero (high for CLO, low for CLZ)
-//              output: result      (32-bit)
+//              input : data        32-bit
+//                      one_or_zero high for CLO, low for CLZ
+//              output: result      32-bit
 
 
 module clo_clz(
@@ -39,7 +39,15 @@ module clo_clz(
           // If all bits of data is one or zero, then the highest bit of result should
           // be high, the result is 32 in decimal (maximum).
           if (data=={32{one_or_zero}}) 
+          begin
             result_temp=6'b100000;
+
+          //Add these lines to eliminate warning for inferring latch which holds it's 
+          //previous value.
+            data_16 = 16'b0;
+            data_8  =  8'b0;
+            data_4  =  4'b0;
+          end            
             else
                 begin
 
