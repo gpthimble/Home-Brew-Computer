@@ -56,11 +56,11 @@ module alu(
     wire [31:0] a,b;
 
     //unit 00 from add_sub.v and clo_clz.v
-    add_sub add_sub0 (~alufunc[0],dataa,datab,overflow_add_sub,r_sub_add);
+    add_sub add_sub0 (alufunc[0],dataa,datab,overflow_add_sub,r_sub_add);
     clo_clz clo_clz0 (dataa,alufunc[0],r_clo_clz);
     
     //unit 10 from shifter.v
-    shifter shifter0 (datab,dataa,alufunc[1],alufunc[0],r_shift);
+    shifter shifter0 (dataa,datab,alufunc[1],alufunc[0],r_shift);
     
     //unit 11 for multiply and divide is not implemented yet.
     //mult mult0 (dataa,datab,r_mult);

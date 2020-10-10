@@ -13,7 +13,7 @@ module add_sub(
     add_sub, a, b, overflow, result
 );
     //------------------------- Interface description   -----------------------------
-    //This pin control the function of this module, 0 for add and 1for sub.
+    //This pin control the function of this module, 0 for add and 1 for sub.
     input add_sub;
     //a,b are two 32-bit data input.
     input [31:0] a,b;
