@@ -1,0 +1,689 @@
+$comment
+	File created using the following command:
+		vcd file HomeBrewComputer.msim.vcd -direction
+$end
+$date
+	Thu Oct 15 21:27:06 2020
+$end
+$version
+	ModelSim Version 10.5b
+$end
+$timescale
+	1ps
+$end
+
+$scope module bus_control_vlg_vec_tst $end
+$var reg 1 ! clk $end
+$var reg 8 " dma [7:0] $end
+$var reg 1 # ready $end
+$var wire 1 $ grant [7] $end
+$var wire 1 % grant [6] $end
+$var wire 1 & grant [5] $end
+$var wire 1 ' grant [4] $end
+$var wire 1 ( grant [3] $end
+$var wire 1 ) grant [2] $end
+$var wire 1 * grant [1] $end
+$var wire 1 + grant [0] $end
+$var wire 1 , req $end
+
+$scope module i1 $end
+$var wire 1 - gnd $end
+$var wire 1 . vcc $end
+$var wire 1 / unknown $end
+$var tri1 1 0 devclrn $end
+$var tri1 1 1 devpor $end
+$var tri1 1 2 devoe $end
+$var wire 1 3 grant[0]~output_o $end
+$var wire 1 4 grant[1]~output_o $end
+$var wire 1 5 grant[2]~output_o $end
+$var wire 1 6 grant[3]~output_o $end
+$var wire 1 7 grant[4]~output_o $end
+$var wire 1 8 grant[5]~output_o $end
+$var wire 1 9 grant[6]~output_o $end
+$var wire 1 : grant[7]~output_o $end
+$var wire 1 ; req~output_o $end
+$var wire 1 < dma[0]~input_o $end
+$var wire 1 = clk~input_o $end
+$var wire 1 > clk~inputclkctrl_outclk $end
+$var wire 1 ? dma[4]~input_o $end
+$var wire 1 @ dma[2]~input_o $end
+$var wire 1 A dma[3]~input_o $end
+$var wire 1 B dma[1]~input_o $end
+$var wire 1 C grant_inner~0_combout $end
+$var wire 1 D WideOr1~0_combout $end
+$var wire 1 E grant~4_combout $end
+$var wire 1 F dma[5]~input_o $end
+$var wire 1 G dma[6]~input_o $end
+$var wire 1 H grant_inner~1_combout $end
+$var wire 1 I grant~6_combout $end
+$var wire 1 J WideOr3~0_combout $end
+$var wire 1 K grant~2_combout $end
+$var wire 1 L WideOr0~0_combout $end
+$var wire 1 M grant~5_combout $end
+$var wire 1 N WideOr6~1_combout $end
+$var wire 1 O WideOr2~0_combout $end
+$var wire 1 P grant~3_combout $end
+$var wire 1 Q WideOr4~0_combout $end
+$var wire 1 R grant~1_combout $end
+$var wire 1 S dma[7]~input_o $end
+$var wire 1 T Decoder1~0_combout $end
+$var wire 1 U Decoder1~1_combout $end
+$var wire 1 V grant~7_combout $end
+$var wire 1 W grant~8_combout $end
+$var wire 1 X WideOr6~0_combout $end
+$var wire 1 Y WideOr6~2_combout $end
+$var wire 1 Z ready~input_o $end
+$var wire 1 [ state~0_combout $end
+$var wire 1 \ state~q $end
+$var wire 1 ] grant~0_combout $end
+$var wire 1 ^ grant_reg [7] $end
+$var wire 1 _ grant_reg [6] $end
+$var wire 1 ` grant_reg [5] $end
+$var wire 1 a grant_reg [4] $end
+$var wire 1 b grant_reg [3] $end
+$var wire 1 c grant_reg [2] $end
+$var wire 1 d grant_reg [1] $end
+$var wire 1 e grant_reg [0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+0!
+b11000001 "
+0#
+1+
+0*
+0)
+0(
+0'
+0&
+0%
+0$
+1,
+0-
+1.
+x/
+10
+11
+12
+13
+04
+05
+06
+07
+08
+09
+0:
+1;
+1<
+0=
+0>
+0?
+0@
+0A
+0B
+0C
+0D
+0E
+0F
+1G
+0H
+0I
+0J
+0K
+0L
+0M
+1N
+0O
+0P
+0Q
+0R
+1S
+0T
+0U
+1V
+0W
+0X
+1Y
+0Z
+1[
+0\
+1]
+0e
+0d
+0c
+0b
+0a
+0`
+0_
+0^
+$end
+#10000
+1!
+1=
+1>
+1e
+1\
+0V
+1W
+1:
+1X
+1$
+0W
+0:
+0X
+0$
+#20000
+0!
+0=
+0>
+#30000
+b1000001 "
+b1 "
+b100001 "
+b100000 "
+1!
+0<
+1F
+0G
+0S
+1=
+1>
+1C
+1L
+#40000
+0!
+0=
+0>
+#50000
+1!
+1=
+1>
+#60000
+b0 "
+0!
+0F
+0=
+0>
+0L
+#70000
+b1000 "
+1#
+1!
+1A
+1Z
+1=
+1>
+1O
+0C
+0[
+#80000
+0!
+0=
+0>
+#90000
+b11000 "
+0#
+1!
+1?
+0Z
+1=
+1>
+1[
+0\
+0]
+1P
+16
+03
+0N
+1X
+0+
+1(
+#100000
+0!
+0=
+0>
+#110000
+b10000 "
+b0 "
+1!
+0A
+0?
+1=
+1>
+0O
+1C
+1V
+0P
+06
+0X
+0(
+0Y
+0;
+0,
+0[
+0e
+1\
+1b
+0V
+1[
+1W
+1P
+16
+1:
+1X
+1$
+1(
+0W
+0:
+0$
+1Y
+1;
+1,
+#120000
+0!
+0=
+0>
+#130000
+b10 "
+b1000010 "
+1!
+1B
+1G
+1=
+1>
+0C
+1H
+1Q
+0H
+#140000
+0!
+0=
+0>
+#150000
+b1000000 "
+b0 "
+1!
+0B
+0G
+1=
+1>
+1C
+0Q
+#160000
+0!
+0=
+0>
+#170000
+1!
+1=
+1>
+#180000
+0!
+0=
+0>
+#190000
+1#
+1!
+1Z
+1=
+1>
+0[
+#200000
+0!
+0=
+0>
+#210000
+0#
+1!
+0Z
+1=
+1>
+1[
+0\
+1V
+0P
+06
+0X
+0(
+0Y
+0;
+0,
+0[
+#220000
+0!
+0=
+0>
+#230000
+1!
+1=
+1>
+0b
+#240000
+0!
+0=
+0>
+#250000
+1!
+1=
+1>
+#260000
+0!
+0=
+0>
+#270000
+1!
+1=
+1>
+#280000
+0!
+0=
+0>
+#290000
+1!
+1=
+1>
+#300000
+0!
+0=
+0>
+#310000
+1!
+1=
+1>
+#320000
+0!
+0=
+0>
+#330000
+1!
+1=
+1>
+#340000
+0!
+0=
+0>
+#350000
+1!
+1=
+1>
+#360000
+0!
+0=
+0>
+#370000
+1!
+1=
+1>
+#380000
+0!
+0=
+0>
+#390000
+1!
+1=
+1>
+#400000
+0!
+0=
+0>
+#410000
+1!
+1=
+1>
+#420000
+0!
+0=
+0>
+#430000
+1!
+1=
+1>
+#440000
+0!
+0=
+0>
+#450000
+1!
+1=
+1>
+#460000
+0!
+0=
+0>
+#470000
+1!
+1=
+1>
+#480000
+0!
+0=
+0>
+#490000
+1!
+1=
+1>
+#500000
+0!
+0=
+0>
+#510000
+1!
+1=
+1>
+#520000
+0!
+0=
+0>
+#530000
+1!
+1=
+1>
+#540000
+0!
+0=
+0>
+#550000
+1!
+1=
+1>
+#560000
+0!
+0=
+0>
+#570000
+1!
+1=
+1>
+#580000
+0!
+0=
+0>
+#590000
+1!
+1=
+1>
+#600000
+0!
+0=
+0>
+#610000
+1!
+1=
+1>
+#620000
+0!
+0=
+0>
+#630000
+1!
+1=
+1>
+#640000
+0!
+0=
+0>
+#650000
+1!
+1=
+1>
+#660000
+0!
+0=
+0>
+#670000
+1!
+1=
+1>
+#680000
+0!
+0=
+0>
+#690000
+1!
+1=
+1>
+#700000
+0!
+0=
+0>
+#710000
+1!
+1=
+1>
+#720000
+0!
+0=
+0>
+#730000
+1!
+1=
+1>
+#740000
+0!
+0=
+0>
+#750000
+1!
+1=
+1>
+#760000
+0!
+0=
+0>
+#770000
+1!
+1=
+1>
+#780000
+0!
+0=
+0>
+#790000
+1!
+1=
+1>
+#800000
+0!
+0=
+0>
+#810000
+1!
+1=
+1>
+#820000
+0!
+0=
+0>
+#830000
+1!
+1=
+1>
+#840000
+0!
+0=
+0>
+#850000
+1!
+1=
+1>
+#860000
+0!
+0=
+0>
+#870000
+1!
+1=
+1>
+#880000
+0!
+0=
+0>
+#890000
+1!
+1=
+1>
+#900000
+0!
+0=
+0>
+#910000
+1!
+1=
+1>
+#920000
+0!
+0=
+0>
+#930000
+1!
+1=
+1>
+#940000
+0!
+0=
+0>
+#950000
+1!
+1=
+1>
+#960000
+0!
+0=
+0>
+#970000
+1!
+1=
+1>
+#980000
+b1 "
+0!
+1<
+0=
+0>
+0C
+1]
+13
+1N
+1+
+1Y
+1;
+1,
+1[
+#990000
+1!
+1=
+1>
+1e
+1\
+0V
+1W
+1:
+1X
+1$
+0W
+0:
+0X
+0$
+#1000000
