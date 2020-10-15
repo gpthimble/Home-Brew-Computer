@@ -1,6 +1,6 @@
 /*<simulation_settings>
 <ftestbench_cmd>quartus_eda --gen_testbench --tool=modelsim_oem --format=verilog --write_settings_files=off HomeBrewComputer -c HomeBrewComputer --vector_source="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/regfile_t.vwf" --testbench_file="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/regfile_t.vwf.vt"</ftestbench_cmd>
-<ttestbench_cmd>quartus_eda --gen_testbench --tool=modelsim_oem --format=verilog --write_settings_files=off HomeBrewComputer -c HomeBrewComputer --vector_source="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/Waveform.vwf" --testbench_file="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/Waveform.vwf.vt"</ttestbench_cmd>
+<ttestbench_cmd>quartus_eda --gen_testbench --tool=modelsim_oem --format=verilog --write_settings_files=off HomeBrewComputer -c HomeBrewComputer --vector_source="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/regfile_t.vwf" --testbench_file="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/regfile_t.vwf.vt"</ttestbench_cmd>
 <fnetlist_cmd>quartus_eda --write_settings_files=off --simulation --functional=on --flatten_buses=off --tool=modelsim_oem --format=verilog --output_directory="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/" HomeBrewComputer -c HomeBrewComputer</fnetlist_cmd>
 <tnetlist_cmd>quartus_eda --write_settings_files=off --simulation --functional=off --flatten_buses=off --timescale=1ps --tool=modelsim_oem --format=verilog --output_directory="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/" HomeBrewComputer -c HomeBrewComputer</tnetlist_cmd>
 <modelsim_script>onerror {exit -code 1}
@@ -20,11 +20,12 @@ proc simTimestamp {} {
 after 2500 simTimestamp
 run -all
 quit -f
+
 </modelsim_script>
 <modelsim_script_timing>onerror {exit -code 1}
 vlib work
 vlog -work work HomeBrewComputer.vo
-vlog -work work Waveform.vwf.vt
+vlog -work work regfile_t.vwf.vt
 vsim -novopt -c -t 1ps -L cycloneive_ver -L altera_ver -L altera_mf_ver -L 220model_ver -L sgate_ver -L altera_lnsim_ver work.regfile_vlg_vec_tst
 vcd file -direction HomeBrewComputer.msim.vcd
 vcd add -internal regfile_vlg_vec_tst/*
@@ -38,6 +39,7 @@ proc simTimestamp {} {
 after 2500 simTimestamp
 run -all
 quit -f
+
 </modelsim_script_timing>
 <hdl_lang>verilog</hdl_lang>
 </simulation_settings>*/

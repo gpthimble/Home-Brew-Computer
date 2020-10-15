@@ -146,3 +146,6 @@ simulation/qsim/work/_lib1_8.qdb
 simulation/qsim/work/_lib1_8.qpg
 simulation/qsim/work/_lib1_8.qtl
 HomeBrewComputer.qsf
+.qsys_edit/filters.xml
+.qsys_edit/preferences.xml
+db/HomeBrewComputer.quiproj.23548.rdr.flock
