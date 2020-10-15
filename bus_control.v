@@ -42,6 +42,7 @@ module bus_control(
                 if (req)
                     state <= 1;
                     grant_reg <= grant_inner;
+                    
             end
         //Busy state, in this state, if has a ready, jump to state idle
             1: begin
