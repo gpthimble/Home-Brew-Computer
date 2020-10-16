@@ -19,7 +19,7 @@
 // the top level entity of the current Quartus project .The user can use this   
 // testbench to simulate his design using a third-party simulation tool .       
 // *****************************************************************************
-// Generated on "10/15/2020 17:41:19"
+// Generated on "10/16/2020 21:41:11"
                                                                                 
 // Verilog Test Bench (with test vectors) for design :                          dummy_slave
 // 
@@ -37,7 +37,7 @@ reg r_w;
 reg request;
 // wires                                               
 wire [31:0] data;
-wire ready;
+wire ready_out;
 
 // assign statements (if any)                          
 assign data = treg_data;
@@ -47,7 +47,7 @@ dummy_slave i1 (
 	.clk(clk),
 	.data(data),
 	.r_w(r_w),
-	.ready(ready),
+	.ready_out(ready_out),
 	.request(request)
 );
 initial 

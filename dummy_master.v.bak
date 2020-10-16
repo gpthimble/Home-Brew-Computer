@@ -6,7 +6,7 @@
 
 
 module dummy_master(
-    clk, request, ready, grant, address, data, r_w
+    clk, request, ready, grant, address, data, r_w, 
 );
     input clk, ready, grant;
     output request, r_w;
@@ -17,7 +17,6 @@ module dummy_master(
     reg [31:0] req_addr [0:32-1];
     reg [31:0] req_r_w;
     reg [31:0] req;
-    wire ready_inner;
 
     //dummy memory operation.
     reg [31:0] mem      [0:32-1];
@@ -28,19 +27,22 @@ module dummy_master(
     begin
         //operation 0, write 0xA7 to address 15;
         req_num = 5'b0;
-
-        //single bit register can't be declared as vector
         req     = 32'b00000000000000000000000000010111;
         req_r_w = 32'b00000000000000000000000000000101;
-
+        //req     [0] = 1;
+        //req_r_w [0] = 1;
         req_addr[0] = 32'd15;
         mem     [0] = 32'hA7;
 
         //operation 1, read from address 15;
+        //req     [1] = 1;
+        //req_r_w [1] = 0;
         req_addr[1] = 32'd15;
         mem     [1] = 32'b0;
 
         //operation 2, write 0x3322fa43 to address 48;
+        //req     [2] = 1;
+        //req_r_w [2] = 1;
         req_addr[2] = 32'd48;
         mem     [2] = 32'h3322fa43;
 
@@ -68,7 +70,7 @@ module dummy_master(
             else req_num<=req_num +1;
             end
         1'b1:begin 
-            if (ready_inner)
+            if (ready)
                 begin
                     if (~req_r_w [req_num]) 
                         mem[req_num] <= data;
@@ -86,19 +88,14 @@ module dummy_master(
     assign r_w = grant ? req_r_w [req_num] : 1'bz;
     wire [31:0] data_out = req_r_w [req_num] ? mem [req_num] :32'bz;
     assign data = grant ? data_out: 32'bz;
-
-    //mask out ready signal when not granted
-    assign ready_inner = grant? ready :1'b0; 
-
 endmodule //dummy_master
 
 
 module dummy_master_1(
-//This module is identical to dummy_master, but with different operations.
-    clk, request, ready, grant, address, data, r_w, ready_inner
+    clk, request, ready, grant, address, data, r_w, 
 );
     input clk, ready, grant;
-    output request, r_w, ready_inner;
+    output request, r_w;
     output [31:0] address;
     inout [31:0] data;
 
@@ -106,7 +103,6 @@ module dummy_master_1(
     reg [31:0] req_addr [0:32-1];
     reg [31:0] req_r_w;
     reg [31:0] req;
-    wire ready_inner;
 
     //dummy memory operation.
     reg [31:0] mem      [0:32-1];
@@ -134,7 +130,7 @@ module dummy_master_1(
         //req     [2] = 1;
         //req_r_w [2] = 1;
         req_addr[2] = 32'd48;
-        mem     [2] = 0;
+        mem     [3] = 0;
 
         //operation 3, a nop, do nothing, other device's chance
         //req     [3] = 0;
@@ -146,7 +142,7 @@ module dummy_master_1(
         //req     [4] = 1;
         //req_r_w [4] = 0;
         req_addr[3] = 32'd48;
-        mem     [3] = 32'h3322fa44;
+        mem     [2] = 32'h3322fa44;
 
         //only four operations for now.
     end
@@ -160,7 +156,7 @@ module dummy_master_1(
             else req_num<=req_num +1;
             end
         1'b1:begin 
-            if (ready_inner)
+            if (ready)
                 begin
                     if (~req_r_w [req_num]) 
                         mem[req_num] <= data;
@@ -178,8 +174,4 @@ module dummy_master_1(
     assign r_w = grant ? req_r_w [req_num] : 1'bz;
     wire [31:0] data_out = req_r_w [req_num] ? mem [req_num] :32'bz;
     assign data = grant ? data_out: 32'bz;
-
-    //mask out ready signal when not granted
-    assign ready_inner = grant? ready :1'b0; 
-
 endmodule //dummy_master

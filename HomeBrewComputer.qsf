@@ -39,7 +39,7 @@
 
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE22F17C6
-set_global_assignment -name TOP_LEVEL_ENTITY dummy_master
+set_global_assignment -name TOP_LEVEL_ENTITY bus_t
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 19.1.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "15:24:18  OCTOBER 01, 2020"
 set_global_assignment -name LAST_QUARTUS_VERSION "19.1.0 Lite Edition"
@@ -50,9 +50,7 @@ set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
 set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.2V
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name VERILOG_FILE bus_t.v
 set_global_assignment -name VECTOR_WAVEFORM_FILE dummy_master_t.vwf
 set_global_assignment -name VERILOG_FILE dummy_master.v
 set_global_assignment -name VERILOG_FILE dummy_slave.v
@@ -84,4 +82,75 @@ set_global_assignment -name QIP_FILE test.qip
 set_global_assignment -name VECTOR_WAVEFORM_FILE bus_control_f.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform1.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE dummy_slave_t.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE bus_t.vwf
+set_instance_assignment -name BOARD_MODEL_NEAR_PULLDOWN_R 30000 -to ready_o
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[31]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[30]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[29]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[28]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[27]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[26]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[25]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[24]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[23]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[22]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[21]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[20]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[19]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[18]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[17]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[16]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[15]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[14]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[13]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[12]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[11]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[10]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[9]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[8]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[7]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[6]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[5]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[4]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[3]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[2]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[1]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[0]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[31]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[30]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[29]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[28]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[27]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[26]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[25]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[24]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[23]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[22]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[21]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[20]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[19]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[18]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[17]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[16]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[15]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[14]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[13]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[12]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[11]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[10]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[9]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[8]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[7]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[6]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[5]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[4]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[3]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[2]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[1]
+set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[0]
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
