@@ -19,7 +19,7 @@
 // the top level entity of the current Quartus project .The user can use this   
 // testbench to simulate his design using a third-party simulation tool .       
 // *****************************************************************************
-// Generated on "10/15/2020 21:27:04"
+// Generated on "10/16/2020 11:02:51"
                                                                                 
 // Verilog Test Bench (with test vectors) for design :                          bus_control
 // 

@@ -7,7 +7,7 @@ Note: if both ModelSim-Altera and ModelSim executables are available, ModelSim-A
 
 **** Generating the ModelSim Testbench ****
 
-quartus_eda --gen_testbench --tool=modelsim_oem --format=verilog --write_settings_files=off HomeBrewComputer -c HomeBrewComputer --vector_source="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/bus_control_f.vwf" --testbench_file="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/bus_control_f.vwf.vt"
+quartus_eda --gen_testbench --tool=modelsim_oem --format=verilog --write_settings_files=off HomeBrewComputer -c HomeBrewComputer --vector_source="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master_t.vwf" --testbench_file="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/dummy_master_t.vwf.vt"
 
 Info: *******************************************************************
 Info: Running Quartus Prime EDA Netlist Writer
@@ -26,11 +26,13 @@ Info: Running Quartus Prime EDA Netlist Writer
     Info: Intel and sold by Intel or its authorized distributors.  Please
     Info: refer to the applicable agreement for further details, at
     Info: https://fpgasoftware.intel.com/eula.
-    Info: Processing started: Thu Oct 15 21:27:04 2020
-Info: Command: quartus_eda --gen_testbench --tool=modelsim_oem --format=verilog --write_settings_files=off HomeBrewComputer -c HomeBrewComputer --vector_source="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/bus_control_f.vwf" --testbench_file="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/bus_control_f.vwf.vt"
+    Info: Processing started: Fri Oct 16 17:16:32 2020
+Info: Command: quartus_eda --gen_testbench --tool=modelsim_oem --format=verilog --write_settings_files=off HomeBrewComputer -c HomeBrewComputer --vector_source="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master_t.vwf" --testbench_file="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/dummy_master_t.vwf.vt"
 Warning (125092): Tcl Script File test.qip not found
     Info (125063): set_global_assignment -name QIP_FILE test.qip
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
+
+ing output pin "address[11]" in vector source file when writing test bench files
 
 Completed successfully. 
 
@@ -57,15 +59,15 @@ Info: Running Quartus Prime EDA Netlist Writer
     Info: Intel and sold by Intel or its authorized distributors.  Please
     Info: refer to the applicable agreement for further details, at
     Info: https://fpgasoftware.intel.com/eula.
-    Info: Processing started: Thu Oct 15 21:27:04 2020
+    Info: Processing started: Fri Oct 16 17:16:33 2020
 Info: Command: quartus_eda --write_settings_files=off --simulation=on --functional=on --flatten_buses=off --tool=modelsim_oem --format=verilog --output_directory="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/" HomeBrewComputer -c HomeBrewComputer
 Warning (125092): Tcl Script File test.qip not found
     Info (125063): set_global_assignment -name QIP_FILE test.qip
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
 Info (204019): Generated file HomeBrewComputer.vo in folder "C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim//" for EDA simulation tool
 Info: Quartus Prime EDA Netlist Writer was successful. 0 errors, 2 warnings
-    Info: Peak virtual memory: 4638 megabytes
-    Info: Processing ended: Thu Oct 15 21:27:05 2020
+    Info: Peak virtual memory: 4642 megabytes
+    Info: Processing ended: Fri Oct 16 17:16:34 2020
     Info: Elapsed time: 00:00:01
     Info: Total CPU time (on all processors): 00:00:00
 
@@ -87,32 +89,32 @@ Reading C:/intelFPGA_lite/19.1/modelsim_ase/tcl/vsim/pref.tcl
 
 # do HomeBrewComputer.do
 # ** Warning: (vlib-34) Library already exists at "work".
-
 # Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
-# Start time: 21:27:05 on Oct 15,2020
+# Start time: 17:16:34 on Oct 16,2020
 # vlog -work work HomeBrewComputer.vo 
-# -- Compiling module bus_control
+
+# -- Compiling module dummy_master
 # -- Compiling module hard_block
 # 
 # Top level modules:
-# 	bus_control
-# End time: 21:27:05 on Oct 15,2020, Elapsed time: 0:00:00
+# 	dummy_master
+# End time: 17:16:34 on Oct 16,2020, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0
 # Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
-# Start time: 21:27:05 on Oct 15,2020
-# vlog -work work bus_control_f.vwf.vt 
-# -- Compiling module bus_control_vlg_vec_tst
+# Start time: 17:16:34 on Oct 16,2020
+# vlog -work work dummy_master_t.vwf.vt 
+
+# -- Compiling module dummy_master_vlg_vec_tst
 # 
 # Top level modules:
-# 	bus_control_vlg_vec_tst
-
-# End time: 21:27:05 on Oct 15,2020, Elapsed time: 0:00:00
+# 	dummy_master_vlg_vec_tst
+# End time: 17:16:34 on Oct 16,2020, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0
 
-# vsim -novopt -c -t 1ps -L cycloneive_ver -L altera_ver -L altera_mf_ver -L 220model_ver -L sgate_ver -L altera_lnsim_ver work.bus_control_vlg_vec_tst 
-# Start time: 21:27:05 on Oct 15,2020
-# Loading work.bus_control_vlg_vec_tst
-# Loading work.bus_control
+# vsim -novopt -c -t 1ps -L cycloneive_ver -L altera_ver -L altera_mf_ver -L 220model_ver -L sgate_ver -L altera_lnsim_ver work.dummy_master_vlg_vec_tst 
+# Start time: 17:16:34 on Oct 16,2020
+# Loading work.dummy_master_vlg_vec_tst
+# Loading work.dummy_master
 # Loading work.hard_block
 # Loading cycloneive_ver.cycloneive_io_obuf
 # Loading cycloneive_ver.cycloneive_io_ibuf
@@ -121,25 +123,27 @@ Reading C:/intelFPGA_lite/19.1/modelsim_ase/tcl/vsim/pref.tcl
 # Loading cycloneive_ver.cycloneive_ena_reg
 # Loading cycloneive_ver.cycloneive_lcell_comb
 # Loading altera_ver.dffeas
+# Loading cycloneive_ver.cycloneive_ram_block
+# Loading cycloneive_ver.cycloneive_ram_register
+# Loading cycloneive_ver.cycloneive_ram_pulse_generator
 # Loading altera_ver.PRIM_GDFF_LOW
 # after#26
-
-# ** Note: $finish    : bus_control_f.vwf.vt(51)
-#    Time: 1 us  Iteration: 0  Instance: /bus_control_vlg_vec_tst
-# End time: 21:27:06 on Oct 15,2020, Elapsed time: 0:00:01
+# ** Note: $finish    : dummy_master_t.vwf.vt(57)
+#    Time: 1 us  Iteration: 0  Instance: /dummy_master_vlg_vec_tst
+# End time: 17:16:35 on Oct 16,2020, Elapsed time: 0:00:01
 # Errors: 0, Warnings: 0
 
 Completed successfully. 
 
 **** Converting ModelSim VCD to vector waveform ****
 
-Reading C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/bus_control_f.vwf...
+Reading C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master_t.vwf...
 
 Reading C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/HomeBrewComputer.msim.vcd...
 
 Processing channel transitions... 
 
-Writing the resulting VWF to C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/HomeBrewComputer_20201015212706.sim.vwf
+Writing the resulting VWF to C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/HomeBrewComputer_20201016171635.sim.vwf
 
 Finished VCD to VWF conversion.
 
