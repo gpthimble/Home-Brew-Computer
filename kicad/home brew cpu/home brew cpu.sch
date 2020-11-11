@@ -1,0 +1,583 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L New_Library:register U?
+U 1 1 5F929686
+P 3700 1050
+F 0 "U?" H 3031 1071 50  0001 R CNN
+F 1 "Data In register" H 4000 1050 50  0000 R CNN
+F 2 "" H 3700 1050 50  0001 C CNN
+F 3 "" H 3700 1050 50  0001 C CNN
+	1    3700 1050
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:PCregister U?
+U 1 1 5F92B746
+P 1750 1050
+F 0 "U?" H 1081 1071 50  0001 R CNN
+F 1 "PCregister" H 1081 980 50  0001 R CNN
+F 2 "" H 1750 1050 50  0001 C CNN
+F 3 "" H 1750 1050 50  0001 C CNN
+	1    1750 1050
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:controlreg U?
+U 1 1 5F92D4A8
+P 5550 1050
+F 0 "U?" H 4881 1096 50  0001 R CNN
+F 1 "controlreg" H 4881 1050 50  0001 R CNN
+F 2 "" H 5550 1050 50  0001 C CNN
+F 3 "" H 5550 1050 50  0001 C CNN
+	1    5550 1050
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:RAM U?
+U 1 1 5F92E6F0
+P 2350 2800
+F 0 "U?" H 1731 2846 50  0001 R CNN
+F 1 "TAG A" H 2450 2900 50  0000 R CNN
+F 2 "" H 2350 2800 50  0001 C CNN
+F 3 "" H 2350 2800 50  0001 C CNN
+	1    2350 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:RAM U?
+U 1 1 5F930404
+P 3900 2800
+F 0 "U?" H 3281 2846 50  0001 R CNN
+F 1 "valid A" H 4000 2900 50  0000 R CNN
+F 2 "" H 3900 2800 50  0001 C CNN
+F 3 "" H 3900 2800 50  0001 C CNN
+	1    3900 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:RAM U?
+U 1 1 5F930B6D
+P 5350 2800
+F 0 "U?" H 4731 2846 50  0001 R CNN
+F 1 "RAM A" H 5450 2900 50  0000 R CNN
+F 2 "" H 5350 2800 50  0001 C CNN
+F 3 "" H 5350 2800 50  0001 C CNN
+	1    5350 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:RAM U?
+U 1 1 5F931095
+P 2350 4450
+F 0 "U?" H 1731 4496 50  0001 R CNN
+F 1 "TAG B" H 2450 4550 50  0000 R CNN
+F 2 "" H 2350 4450 50  0001 C CNN
+F 3 "" H 2350 4450 50  0001 C CNN
+	1    2350 4450
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:RAM U?
+U 1 1 5F9318BB
+P 3900 4450
+F 0 "U?" H 3281 4496 50  0001 R CNN
+F 1 "valid B" H 4000 4550 50  0000 R CNN
+F 2 "" H 3900 4450 50  0001 C CNN
+F 3 "" H 3900 4450 50  0001 C CNN
+	1    3900 4450
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:RAM U?
+U 1 1 5F931DD0
+P 5350 4450
+F 0 "U?" H 4731 4496 50  0001 R CNN
+F 1 "RAM B" H 5450 4550 50  0000 R CNN
+F 2 "" H 5350 4450 50  0001 C CNN
+F 3 "" H 5350 4450 50  0001 C CNN
+	1    5350 4450
+	1    0    0    -1  
+$EndComp
+$Comp
+L New_Library:RAM U?
+U 1 1 5F9324DA
+P 5350 5900
+F 0 "U?" H 4731 5946 50  0001 R CNN
+F 1 "RAM C" H 5450 6000 50  0000 R CNN
+F 2 "" H 5350 5900 50  0001 C CNN
+F 3 "" H 5350 5900 50  0001 C CNN
+	1    5350 5900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1750 4300 2100 4300
+Wire Wire Line
+	1750 2650 2100 2650
+Connection ~ 1750 2650
+Wire Wire Line
+	1750 2650 1750 4300
+Wire Wire Line
+	1750 2150 3350 2150
+Wire Wire Line
+	3350 2150 3350 2650
+Wire Wire Line
+	3350 2650 3650 2650
+Connection ~ 1750 2150
+Wire Wire Line
+	1750 2150 1750 2650
+Wire Wire Line
+	3350 2650 3350 4300
+Wire Wire Line
+	3350 4300 3650 4300
+Connection ~ 3350 2650
+Wire Wire Line
+	3350 2150 4750 2150
+Wire Wire Line
+	4750 2150 4750 2650
+Wire Wire Line
+	4750 2650 5100 2650
+Connection ~ 3350 2150
+Wire Wire Line
+	4750 2650 4750 4300
+Wire Wire Line
+	4750 4300 5100 4300
+Connection ~ 4750 2650
+Wire Wire Line
+	1500 1900 2350 1900
+Wire Wire Line
+	2350 1900 2350 2500
+Wire Wire Line
+	1500 3800 2350 3800
+Wire Wire Line
+	2350 3800 2350 4150
+Connection ~ 1500 1900
+Wire Wire Line
+	2100 2900 1900 2900
+Wire Wire Line
+	1900 2900 1900 3400
+Wire Wire Line
+	1900 3400 3500 3400
+Wire Wire Line
+	3500 3400 3500 2900
+Wire Wire Line
+	3500 2900 3650 2900
+Wire Wire Line
+	3500 3400 4950 3400
+Wire Wire Line
+	4950 3400 4950 2900
+Wire Wire Line
+	4950 2900 5100 2900
+Connection ~ 3500 3400
+Wire Wire Line
+	4950 3400 6100 3400
+Connection ~ 4950 3400
+Text Label 6100 3400 0    50   ~ 0
+WE_A
+$Comp
+L 4xxx:2-1 U?
+U 1 1 5F93AA8D
+P 2800 3250
+F 0 "U?" V 2527 3250 50  0001 C CNN
+F 1 "=" V 2800 3300 50  0000 C CNN
+F 2 "" H 2800 3250 50  0001 C CNN
+F 3 "" H 2800 3250 50  0001 C CNN
+	1    2800 3250
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	2350 3200 2800 3200
+Wire Wire Line
+	1500 1900 1500 3300
+Wire Wire Line
+	2800 3300 1500 3300
+Connection ~ 1500 3300
+Wire Wire Line
+	1500 3300 1500 3800
+Wire Wire Line
+	2350 3050 2350 3200
+Wire Wire Line
+	1500 1100 1500 1900
+Wire Wire Line
+	1750 1100 1750 2150
+$Comp
+L 4xxx:2-1 U?
+U 1 1 5F944069
+P 4250 3200
+F 0 "U?" V 3977 3200 50  0001 C CNN
+F 1 "&" V 4250 3250 50  0000 C CNN
+F 2 "" H 4250 3200 50  0001 C CNN
+F 3 "" H 4250 3200 50  0001 C CNN
+	1    4250 3200
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	3900 3150 4250 3150
+Wire Wire Line
+	2900 3250 4250 3250
+Wire Wire Line
+	3900 3150 3900 3050
+Text Label 6100 3200 0    50   ~ 0
+HIT_A
+Wire Wire Line
+	4350 3200 6100 3200
+$Comp
+L New_Library:RAM U?
+U 1 1 5F948B6F
+P 3900 5900
+F 0 "U?" H 3281 5946 50  0001 R CNN
+F 1 "valid B" H 4000 6000 50  0000 R CNN
+F 2 "" H 3900 5900 50  0001 C CNN
+F 3 "" H 3900 5900 50  0001 C CNN
+	1    3900 5900
+	1    0    0    -1  
+$EndComp
+Text Notes 1850 2650 0    50   ~ 0
+INDEX
+Text Notes 3400 2650 0    50   ~ 0
+INDEX
+Text Notes 4850 2650 0    50   ~ 0
+INDEX
+$Comp
+L 4xxx:2-1 U?
+U 1 1 5F949FF0
+P 2750 4900
+F 0 "U?" V 2477 4900 50  0001 C CNN
+F 1 "=" V 2750 4950 50  0000 C CNN
+F 2 "" H 2750 4900 50  0001 C CNN
+F 3 "" H 2750 4900 50  0001 C CNN
+	1    2750 4900
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	2750 4850 2350 4850
+Wire Wire Line
+	2350 4850 2350 4700
+$Comp
+L 4xxx:2-1 U?
+U 1 1 5F94AEB2
+P 4300 4850
+F 0 "U?" V 4027 4850 50  0001 C CNN
+F 1 "&" V 4300 4900 50  0000 C CNN
+F 2 "" H 4300 4850 50  0001 C CNN
+F 3 "" H 4300 4850 50  0001 C CNN
+	1    4300 4850
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	2850 4900 4300 4900
+Wire Wire Line
+	3900 4700 3900 4800
+Wire Wire Line
+	3900 4800 4300 4800
+Text Label 6100 4850 0    50   ~ 0
+HIT_B
+Wire Wire Line
+	4400 4850 6100 4850
+Wire Wire Line
+	1500 3800 1500 4950
+Wire Wire Line
+	1500 4950 2750 4950
+Connection ~ 1500 3800
+Wire Wire Line
+	2100 4550 1900 4550
+Wire Wire Line
+	1900 4550 1900 5050
+Wire Wire Line
+	1900 5050 3500 5050
+Wire Wire Line
+	3500 5050 3500 4550
+Wire Wire Line
+	3500 4550 3650 4550
+Wire Wire Line
+	3500 5050 4950 5050
+Wire Wire Line
+	4950 5050 4950 4550
+Wire Wire Line
+	4950 4550 5100 4550
+Connection ~ 3500 5050
+Connection ~ 4950 5050
+Text Label 6100 5050 0    50   ~ 0
+WE_B
+Wire Wire Line
+	4950 5050 6100 5050
+Wire Wire Line
+	3650 6000 3500 6000
+Wire Wire Line
+	3500 6000 3500 6500
+Wire Wire Line
+	3500 6500 4950 6500
+Wire Wire Line
+	4950 6500 4950 6000
+Wire Wire Line
+	4950 6000 5100 6000
+Wire Wire Line
+	4950 6500 6100 6500
+Connection ~ 4950 6500
+Text Label 6100 6500 0    50   ~ 0
+WE_C
+$Comp
+L New_Library:1to1 U?
+U 1 1 5F95BBA0
+P 2750 1950
+F 0 "U?" H 2750 2215 50  0001 C CNN
+F 1 "if no cache" H 2750 2000 50  0000 C CNN
+F 2 "" H 2750 1950 50  0001 C CNN
+F 3 "" H 2750 1950 50  0001 C CNN
+	1    2750 1950
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2250 1050 2250 1400
+Wire Wire Line
+	2050 1050 2250 1050
+Text Label 750  1000 1    50   ~ 0
+~stall
+Wire Wire Line
+	750  1000 750  1250
+Wire Wire Line
+	750  1250 1300 1250
+Wire Wire Line
+	1300 1250 1300 1050
+Wire Wire Line
+	1300 1050 1400 1050
+Wire Wire Line
+	3200 1250 3200 1050
+Wire Wire Line
+	3200 1050 3350 1050
+Wire Wire Line
+	1300 1250 3200 1250
+Connection ~ 1300 1250
+Wire Wire Line
+	3200 1250 5050 1250
+Wire Wire Line
+	5050 1250 5050 1050
+Wire Wire Line
+	5050 1050 5200 1050
+Connection ~ 3200 1250
+Wire Wire Line
+	1300 1250 1300 5750
+Wire Wire Line
+	1300 5750 3650 5750
+Text Notes 3050 5750 0    50   ~ 0
+~stall as clear
+Text Notes 1850 4300 0    50   ~ 0
+INDEX
+Text Notes 3400 4300 0    50   ~ 0
+INDEX
+Text Notes 4850 4300 0    50   ~ 0
+INDEX
+Text Label 6050 1950 0    50   ~ 0
+NoCache
+Text Label 6050 1700 0    50   ~ 0
+CPU_req
+Wire Wire Line
+	5800 1200 5800 1550
+Wire Wire Line
+	5800 1550 6050 1550
+Text Label 6050 1550 0    50   ~ 0
+CPU_rw
+Wire Wire Line
+	3900 2500 3900 2350
+Wire Wire Line
+	3900 2350 4100 2350
+Text Label 4100 2350 0    50   ~ 0
+HIGH
+Text Label 4050 4050 0    50   ~ 0
+HIGH
+Wire Wire Line
+	4050 4050 3900 4050
+Wire Wire Line
+	3900 4050 3900 4150
+Text Label 4050 5500 0    50   ~ 0
+HIGH
+Wire Wire Line
+	4050 5500 3900 5500
+Wire Wire Line
+	3900 5500 3900 5600
+Wire Notes Line
+	8500 1150 8500 550 
+Wire Notes Line
+	500  550  500  1150
+Text Notes 550  650  0    50   ~ 0
+CPU
+Wire Notes Line
+	500  1150 8500 1150
+Wire Notes Line
+	500  550  8500 550 
+Text Label 7000 950  0    50   ~ 0
+Data_to_CPU
+Text Label 7900 950  0    50   ~ 0
+CPU_ready
+Wire Wire Line
+	7900 950  7900 1250
+Wire Notes Line
+	10000 1650 10000 5000
+Wire Notes Line
+	10000 5000 10950 5000
+Wire Notes Line
+	10950 5000 10950 1650
+Wire Notes Line
+	10950 1650 10000 1650
+Text Label 10200 1950 0    50   ~ 0
+BUS_addr
+Wire Wire Line
+	10200 1950 9900 1950
+Text Label 10200 2250 0    50   ~ 0
+BUS_data
+Text Label 10200 2600 0    50   ~ 0
+BUS_req
+Wire Wire Line
+	10200 2600 9900 2600
+Text Label 10200 2850 0    50   ~ 0
+BUS_grant
+Wire Wire Line
+	10200 2850 9900 2850
+Text Label 10200 3100 0    50   ~ 0
+BUS_ready
+Wire Wire Line
+	10200 3100 9900 3100
+Text Notes 10100 4950 0    50   ~ 0
+BUS
+Wire Wire Line
+	2250 1400 2500 1400
+Text Label 6050 1400 0    50   ~ 0
+CPU_addr
+Wire Wire Line
+	5550 1100 5550 1700
+Wire Wire Line
+	5550 1700 6050 1700
+Wire Wire Line
+	2650 1950 2500 1950
+Wire Wire Line
+	2500 1950 2500 1400
+Connection ~ 2500 1400
+Wire Wire Line
+	2500 1400 6050 1400
+$Comp
+L 4xxx:2-1 U?
+U 1 1 5F9B8A1E
+P 5900 2200
+F 0 "U?" V 6165 2250 50  0001 C CNN
+F 1 "0  1" H 5900 2250 50  0000 C CNN
+F 2 "" H 5900 2200 50  0001 C CNN
+F 3 "" H 5900 2200 50  0001 C CNN
+	1    5900 2200
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5350 2200 5350 2500
+Wire Wire Line
+	5350 2200 5700 2200
+Wire Wire Line
+	5700 2200 5700 4000
+Wire Wire Line
+	5700 4000 5350 4000
+Wire Wire Line
+	5350 4000 5350 4150
+Wire Wire Line
+	5700 4000 5700 5450
+Wire Wire Line
+	5700 5450 5350 5450
+Wire Wire Line
+	5350 5450 5350 5600
+Connection ~ 5700 4000
+Wire Wire Line
+	5700 2200 5800 2200
+Connection ~ 5700 2200
+Wire Wire Line
+	3700 1800 6000 1800
+Wire Wire Line
+	6000 1800 6000 2150
+Wire Wire Line
+	6000 2150 5900 2150
+Wire Wire Line
+	3700 1100 3700 1800
+Wire Wire Line
+	5900 2250 6550 2250
+Wire Wire Line
+	5850 2300 5850 2350
+Wire Wire Line
+	5850 2350 6050 2350
+Text Label 6050 2350 0    50   ~ 0
+Data_sel
+Wire Wire Line
+	2850 1950 6050 1950
+Wire Notes Line
+	9350 2800 9350 5700
+Wire Notes Line
+	9350 5700 6750 5700
+Wire Notes Line
+	6750 5700 6750 2800
+Wire Notes Line
+	6750 2800 9350 2800
+Text Notes 6800 2900 0    50   ~ 0
+Cache CU
+$Comp
+L New_Library:4to1 U?
+U 1 1 5F9F7EF6
+P 5950 3750
+F 0 "U?" V 5535 3750 50  0001 C CNN
+F 1 "0 1 2 3" H 5950 3750 50  0000 C CNN
+F 2 "" H 5950 3750 50  0001 C CNN
+F 3 "" H 5950 3750 50  0001 C CNN
+	1    5950 3750
+	0    1    1    0   
+$EndComp
+Text Label 6100 3750 0    50   ~ 0
+data_out
+Wire Wire Line
+	5350 3050 5350 3600
+Wire Wire Line
+	5350 3600 5900 3600
+Wire Wire Line
+	5350 4700 5350 4800
+Wire Wire Line
+	5650 4800 5650 3700
+Wire Wire Line
+	5650 3700 5900 3700
+Wire Wire Line
+	5350 4800 5650 4800
+Wire Wire Line
+	5350 6150 5350 6250
+Wire Wire Line
+	5350 6250 5750 6250
+Wire Wire Line
+	5750 6250 5750 3800
+Wire Wire Line
+	5750 3800 5900 3800
+Wire Wire Line
+	5900 3900 5800 3900
+Wire Wire Line
+	5800 3900 5800 4100
+Wire Wire Line
+	5800 4100 6550 4100
+Wire Wire Line
+	6550 4100 6550 2250
+Connection ~ 6550 2250
+Wire Wire Line
+	6550 2250 10200 2250
+Wire Wire Line
+	7000 950  7000 3750
+Wire Wire Line
+	6000 3750 7000 3750
+Wire Wire Line
+	5950 4250 6100 4250
+Wire Wire Line
+	5950 4000 5950 4250
+Text Label 6100 4250 0    50   ~ 0
+out_sel
+$EndSCHEMATC

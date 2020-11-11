@@ -1,0 +1,110 @@
+EESchema-LIBRARY Version 2.4
+#encoding utf-8
+#
+# 1to1
+#
+DEF 1to1 U 0 40 Y Y 1 F N
+F0 "U" 0 0 50 H V C CNN
+F1 "1to1" 0 0 50 H V C CNN
+F2 "" 0 0 50 H I C CNN
+F3 "" 0 0 50 H I C CNN
+DRAW
+S -100 100 100 -100 0 0 0 N
+X ~ ~ -100 0 100 L 50 50 1 1 I
+X ~ ~ 100 0 100 R 50 50 1 1 I
+ENDDRAW
+ENDDEF
+#
+# 4to1
+#
+DEF 4to1 U 0 40 Y Y 1 F N
+F0 "U" 0 0 50 H V C CNN
+F1 "4to1" 0 0 50 H V C CNN
+F2 "" 0 0 50 H I C CNN
+F3 "" 0 0 50 H I C CNN
+DRAW
+S -250 50 250 -50 0 0 0 N
+X ~ ~ -150 -50 100 D 50 50 1 1 I
+X ~ ~ -50 -50 100 D 50 50 1 1 I
+X ~ ~ 0 50 100 U 50 50 1 1 I
+X ~ ~ 50 -50 100 D 50 50 1 1 I
+X ~ ~ 150 -50 100 D 50 50 1 1 I
+ENDDRAW
+ENDDEF
+#
+# PCregister
+#
+DEF PCregister U 0 40 Y Y 1 F N
+F0 "U" 250 100 50 H V C CNN
+F1 "PCregister" -100 100 50 H V C CNN
+F2 "" 0 0 50 H I C CNN
+F3 "" 0 0 50 H I C CNN
+DRAW
+T 0 250 0 50 0 0 0 B Normal 0 C C
+T 0 0 0 50 0 0 0 INDEX Normal 0 C C
+T 0 -250 0 50 0 0 0 TAG Normal 0 C C
+S -350 50 -150 -50 0 1 0 N
+S -350 50 350 -50 0 1 0 N
+S -150 50 200 -50 0 1 0 N
+X D_in ~ 0 50 100 U 50 50 1 1 I
+X D_out ~ 0 -50 100 D 50 50 1 1 I
+X D_out ~ 300 -50 100 D 50 50 1 1 I
+X Dout ~ -250 -50 100 D 50 50 1 1 I
+X W_E ~ -350 0 100 L 50 50 1 1 I
+ENDDRAW
+ENDDEF
+#
+# RAM
+#
+DEF RAM U 0 40 Y Y 1 F N
+F0 "U" 0 0 50 H V C CNN
+F1 "RAM" 0 100 50 H V C CNN
+F2 "" 0 0 50 H I C CNN
+F3 "" 0 0 50 H I C CNN
+DRAW
+S -250 300 250 -250 0 1 0 N
+X D_in ~ 0 300 100 U 50 50 1 1 I
+X D_out ~ 0 -250 100 D 50 50 1 1 O
+X W_E ~ -250 -100 100 L 50 50 1 1 I
+X ~ ~ -250 150 100 L 50 50 1 1 I
+ENDDRAW
+ENDDEF
+#
+# controlreg
+#
+DEF controlreg U 0 40 Y Y 1 F N
+F0 "U" 300 100 50 H V C CNN
+F1 "controlreg" -150 100 50 H V C CNN
+F2 "" 0 0 50 H I C CNN
+F3 "" 0 0 50 H I C CNN
+DRAW
+T 0 -250 0 50 0 0 0 Clr Normal 0 C C
+T 0 250 0 50 0 0 0 R_W Normal 0 C C
+T 0 0 0 50 0 0 0 Req Normal 0 C C
+S -350 50 -100 -50 0 0 0 N
+S -350 50 400 -50 0 0 0 N
+S -100 50 150 -50 0 0 0 N
+X D_in ~ 50 50 100 U 50 50 1 1 I
+X Dout ~ -250 -50 100 D 50 50 1 1 I
+X Dout ~ 0 -50 100 D 50 50 1 1 I
+X Dout ~ 250 -50 100 D 50 50 1 1 I
+X W_E ~ -350 0 100 L 50 50 1 1 I
+ENDDRAW
+ENDDEF
+#
+# register
+#
+DEF register U 0 40 Y Y 1 F N
+F0 "U" 250 0 50 H V C CNN
+F1 "register" 0 0 50 H V C CNN
+F2 "" 0 0 50 H I C CNN
+F3 "" 0 0 50 H I C CNN
+DRAW
+S -350 50 350 -50 0 1 0 N
+X D_in ~ 0 50 100 U 50 50 1 1 I
+X D_out ~ 0 -50 100 D 50 50 1 1 I
+X W_E ~ -350 0 100 L 50 50 1 1 I
+ENDDRAW
+ENDDEF
+#
+#End Library
