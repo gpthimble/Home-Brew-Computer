@@ -422,19 +422,22 @@ end
 assign WE_C = NO_CACHE && need_update;
 
 //2.If the requested address is in other range, need to select a group to replace.
-//There are two more situations here, when both group are empty or valid, we need
-//to use the counter described above to randomly choose one group; otherwise, we
-//should replace the empty group;
-
-/*
-这里仍有问题， 需要单独考虑写入时的情况，应当优先替换tag相同的组。
-*/
-
+//There are three more situations here:
+//      1. Replace group with the same tag first. This make sure tag of two group
+//          is different.
+//      2. when both group are empty or valid, we need to use the counter described 
+//          above to randomly choose one group; 
+//      3. otherwise, we should replace the empty group;
 reg [1:0] group_sel;
 always @(*)
 begin
+    //replace group with the same tag first.
+    if (TAG_A_out == tag)
+        group_sel <= 2'b01;
+    else if (TAG_B_out ==tag)
+        group_sel <= 2'b10;
     //if both group is empty or valid, randomly choose one group.
-    if (VALID_A_out == VALID_B_out)
+    else if (VALID_A_out == VALID_B_out)
         group_sel <= random ? 2'b01 : 2'b10;
     //if only one group is empty, choose the empty group.
     else
