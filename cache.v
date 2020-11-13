@@ -48,7 +48,7 @@
 //DATE:         2020-10-29
 //AUTHOR:       Thimble Liu
 
-module cache #(parameter WIDTH = 32, parameter INDEX =7 )
+module cache 
 (
     CPU_stall,
     CPU_addr, CPU_data, CPU_req, CPU_RW, CPU_clr,
@@ -122,15 +122,15 @@ module cache #(parameter WIDTH = 32, parameter INDEX =7 )
 //--------------------------    Module implementation  -------------------------
 
 //This pair of parameters describe the range of not cached memory.
-parameter no_cache_start=0;
-parameter no_cache_end =0;
+parameter no_cache_start=11111;
+parameter no_cache_end =11111;
 
 //Number of Lines in each group.
 localparam cache_lines = 2<< (INDEX -1);
 localparam tag_size = 32-2- INDEX;
 //default size of the cache is two 512 bytes (128 lines) set, total size is 1KB.
-//parameter INDEX=7;
-//parameter WIDTH=32;
+parameter INDEX=7;
+parameter WIDTH=32;
 
 //------------------------------    FROM CPU  -----------------------------------
 //Altera on board RAM address port has a internal register, so the address port
@@ -198,8 +198,8 @@ wire WE_A, WE_B, WE_C;
 //  Since tags are used to store the part of address that not used in indexing
 //  cache lines. This cache has a line size of 4 bytes (2-bit word index) and 
 //  two 2 << (INDEX -1) lines set, thus, lower 2+INDEX bits are used for indexing.
-reg [tag_size-1 : 0] TAG_A [cache_lines];
-reg [tag_size-1 : 0] TAG_B [cache_lines];
+reg [tag_size-1 : 0] TAG_A [0 : cache_lines-1];
+reg [tag_size-1 : 0] TAG_B [0 : cache_lines-1];
 
 //Out put of TAG_A and TAG_B
 reg [tag_size-1 : 0] TAG_A_out, TAG_B_out;
@@ -208,18 +208,18 @@ reg [tag_size-1 : 0] TAG_A_out, TAG_B_out;
 always @(posedge clk)
 begin
     if (WE_A) 
-        TAG_A [index] <= tag;
+        TAG_A [index] = tag;
     //if read and write at same time, get the new value.
-    TAG_A_out = TAG_A [index];
+    TAG_A_out <= TAG_A [index];
 end
 
 //Memory for TAG_B.
 always @(posedge clk)
 begin
     if (WE_B)
-        TAG_B [index] <= tag;
+        TAG_B [index] = tag;
     //if read and write at same time, get the new value.
-    TAG_B_out = TAG_B [index];
+    TAG_B_out <= TAG_B [index];
 end
 //----------------------------------------------------------------------------
 
@@ -283,8 +283,8 @@ wire VALID_C_out = VALID_C;
 //----------------------------------RAM---------------------------------------
 
 //Cache has 2 sets, each set has 128 (by default) lines
-reg [31:0] RAM_A [cache_lines];
-reg [31:0] RAM_B [cache_lines];
+reg [31:0] RAM_A [0 : cache_lines-1];
+reg [31:0] RAM_B [0 : cache_lines-1];
 
 wire [31:0] RAM_in;
 
@@ -292,18 +292,18 @@ reg [31:0] RAM_A_out;
 always @(posedge clk)
 begin
     if (WE_A)
-        RAM_A[index]<= RAM_in;
+        RAM_A[index] = RAM_in;
     //if read and write at same time, get the new value.
-    RAM_A_out = RAM_A[index];
+    RAM_A_out <= RAM_A[index];
 end
 
 reg [31:0] RAM_B_out;
 always @(posedge clk)
 begin
     if (WE_B)
-        RAM_B[index]<= RAM_in;
+        RAM_B[index] = RAM_in;
     //if read and write at same time, get the new value.
-    RAM_B_out = RAM_B[index];
+    RAM_B_out <= RAM_B[index];
 end
 
 //RAM_C is for request in no cache range.
@@ -345,10 +345,10 @@ assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 //signal from the bus is acknowledged. So if it's a read request, BUS_req is cache
 //miss signal, at the next positive edge of clock after ready comes from the bus, 
 //cache will be filled and cache hit will be HIGH, thus BUS_req will be LOW.
-//If it's a write request, BUS_req is HIGH when it's a new instruction, oterwise
-//BUS_req will be determied by the registered ready signal. This implements the
+//If it's a write request, BUS_req is HIGH when it's a new instruction, otherwise
+//BUS_req will be determined by the registered ready signal. This implements the
 //write through policy.
-assign BUS_req = req && ((~RW && ~CACHE_HIT_R)||(RW && ~ready_reg));
+assign BUS_req = req && ((~RW && ~CACHE_HIT_R && CPU_stall)||(RW && ~ready_reg));
 //-----------------------------------------------------------------------------
 
 //------------------------------ Cache control---------------------------------

@@ -5,7 +5,7 @@ Warning (10268): Verilog HDL information at cache.v(301): always construct conta
 Warning (10273): Verilog HDL warning at cache.v(328): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 328
 Warning (10273): Verilog HDL warning at cache.v(338): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 338
 Warning (10273): Verilog HDL warning at cache.v(339): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 339
-Info (10281): Verilog HDL Declaration information at cache.v(51): object "INDEX" differs only in case from object "index" in the same scope File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 51
+Info (10281): Verilog HDL Declaration information at cache.v(132): object "INDEX" differs only in case from object "index" in the same scope File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 132
 Warning (10273): Verilog HDL warning at dummy_master.v(85): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master.v Line: 85
 Warning (10273): Verilog HDL warning at dummy_master.v(87): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master.v Line: 87
 Warning (10273): Verilog HDL warning at dummy_master.v(88): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master.v Line: 88

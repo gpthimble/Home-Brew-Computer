@@ -1,13 +1,5 @@
 
-State Machine - |bus_t|dummy_slave_1:dummy_slave_b|state
-Name state.011 state.010 state.001 state.000 state.100 
-state.000 0 0 0 0 0 
-state.001 0 0 1 1 0 
-state.010 0 1 0 1 0 
-state.011 1 0 0 1 0 
-state.100 0 0 0 1 1 
-
-State Machine - |bus_t|dummy_slave:dummy_slave_a|state
+State Machine - |cache_t|dummy_slave:memory|state
 Name state.011 state.010 state.001 state.000 state.100 
 state.000 0 0 0 0 0 
 state.001 0 0 1 1 0 

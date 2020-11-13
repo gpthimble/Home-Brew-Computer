@@ -1,42 +1,37 @@
 # do HomeBrewComputer.do
 # ** Warning: (vlib-34) Library already exists at "work".
 # Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
-# Start time: 21:59:02 on Oct 16,2020
+# Start time: 01:57:17 on Nov 14,2020
 # vlog -work work HomeBrewComputer.vo 
-# -- Compiling module bus_t
-# -- Compiling module hard_block
+# -- Compiling module cache_t
 # 
 # Top level modules:
-# 	bus_t
-# End time: 21:59:02 on Oct 16,2020, Elapsed time: 0:00:00
+# 	cache_t
+# End time: 01:57:18 on Nov 14,2020, Elapsed time: 0:00:01
 # Errors: 0, Warnings: 0
 # Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
-# Start time: 21:59:02 on Oct 16,2020
-# vlog -work work bus_t.vwf.vt 
-# -- Compiling module bus_t_vlg_vec_tst
+# Start time: 01:57:18 on Nov 14,2020
+# vlog -work work Waveform6.vwf.vt 
+# -- Compiling module cache_t_vlg_vec_tst
 # 
 # Top level modules:
-# 	bus_t_vlg_vec_tst
-# End time: 21:59:02 on Oct 16,2020, Elapsed time: 0:00:00
+# 	cache_t_vlg_vec_tst
+# End time: 01:57:18 on Nov 14,2020, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0
-# vsim -novopt -c -t 1ps -L cycloneive_ver -L altera_ver -L altera_mf_ver -L 220model_ver -L sgate_ver -L altera_lnsim_ver work.bus_t_vlg_vec_tst 
-# Start time: 21:59:02 on Oct 16,2020
-# Loading work.bus_t_vlg_vec_tst
-# Loading work.bus_t
-# Loading work.hard_block
+# vsim -novopt -c -t 1ps -L cycloneive_ver -L altera_ver -L altera_mf_ver -L 220model_ver -L sgate_ver -L altera_lnsim_ver work.cache_t_vlg_vec_tst 
+# Start time: 01:57:18 on Nov 14,2020
+# Loading work.cache_t_vlg_vec_tst
+# Loading work.cache_t
 # Loading cycloneive_ver.cycloneive_io_obuf
 # Loading cycloneive_ver.cycloneive_io_ibuf
-# Loading cycloneive_ver.cycloneive_clkctrl
-# Loading cycloneive_ver.cycloneive_mux41
-# Loading cycloneive_ver.cycloneive_ena_reg
-# Loading cycloneive_ver.cycloneive_lcell_comb
 # Loading altera_ver.dffeas
+# Loading cycloneive_ver.cycloneive_lcell_comb
 # Loading cycloneive_ver.cycloneive_ram_block
 # Loading cycloneive_ver.cycloneive_ram_register
 # Loading cycloneive_ver.cycloneive_ram_pulse_generator
 # Loading altera_ver.PRIM_GDFF_LOW
-# after#26
-# ** Note: $finish    : bus_t.vwf.vt(59)
-#    Time: 2 us  Iteration: 0  Instance: /bus_t_vlg_vec_tst
-# End time: 21:59:02 on Oct 16,2020, Elapsed time: 0:00:00
+# after#25
+# ** Note: $finish    : Waveform6.vwf.vt(71)
+#    Time: 1 us  Iteration: 0  Instance: /cache_t_vlg_vec_tst
+# End time: 01:57:18 on Nov 14,2020, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0

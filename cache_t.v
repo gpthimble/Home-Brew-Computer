@@ -1,0 +1,84 @@
+//testbench for cache
+
+module cache_t(
+clk,clr,
+BUS_addr_o, BUS_data_o, BUS_req_o, BUS_ready_o,BUS_RW_o,
+DMA_o,grant_o,
+CPU_stall_o, CPU_addr_o, CPU_data_o, CPU_ready_o,CPU_stall_in,
+next_pc_o
+);
+
+input clk,clr,CPU_stall_in;
+
+//These ports are used for testbench output.
+output [31:0] BUS_addr_o, BUS_data_o, CPU_addr_o, CPU_data_o,next_pc_o;
+output BUS_req_o, BUS_ready_o,BUS_RW_o,CPU_stall_o,CPU_ready_o;
+output [7:0] DMA_o, grant_o;
+
+//These wires are internal bus signal.
+wire [31:0] BUS_addr, BUS_data;
+wire BUS_req, BUS_ready, BUS_RW;
+wire [7:0] DMA, grant;
+
+//These wires are used to simulate CPU.
+
+wire [31:0] PC,next_pc,CPU_data;
+
+wire  CPU_ready;
+
+//hook up the bus controller
+bus_control bus_control_0 (DMA,grant,BUS_req, BUS_ready,clk);
+
+//hook up the simulated memory
+dummy_slave memory(clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
+
+//hook up the simulated instruction cache
+cache I_cache (CPU_stall,next_pc, 32'b0, 1'b1, 1'b0, 1'b0, CPU_data, CPU_ready, PC,
+                BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready, clr, clk);
+
+reg [31:0] address [0:7] ;
+initial
+begin
+    address[0]= 0 ;
+    address[1]= 4 ;
+    address[2]= 4 ;
+    address[3]= 16 ;
+    address[4]= 4 ;
+    address[5]= 24 ;
+    address[6]= 28 ;
+    address[7]= 32 ;
+end
+
+integer i =0;
+always @(posedge clk)
+begin
+    if (~CPU_stall) 
+        i =i+1;
+end
+
+assign next_pc = address[i+1];
+
+reg CPU_stall;
+always@(negedge clk)
+begin
+    if (clr) CPU_stall<=0;
+    else CPU_stall<=~CPU_ready;
+end
+
+assign BUS_addr_o=BUS_addr;
+assign BUS_data_o= BUS_data;
+assign CPU_addr_o = PC;
+assign CPU_data_o = CPU_data;
+assign BUS_req_o = BUS_req;
+assign BUS_ready_o = BUS_ready;
+assign BUS_RW_o = BUS_RW;
+assign CPU_stall_o = CPU_stall;
+assign CPU_ready_o = CPU_ready;
+
+assign DMA_o= DMA;
+assign grant_o = grant;
+assign next_pc_o = next_pc;
+
+
+
+endmodule

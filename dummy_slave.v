@@ -27,7 +27,7 @@ module dummy_slave(
 
 //--------------------------    Module implementation  -------------------------
     //dummy memory
-    reg [31:0] mem [0:32-1];
+    (* ram_init_file = "ram.mif" *) reg [31:0] mem [0:32-1];
 
     //internal state machine
     reg [ 2:0] state;
