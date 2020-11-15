@@ -1,7 +1,6 @@
 //FILE:         cache.v
 //DESCRIPTION:  This file implemented the cache module.
-//              
-//              Features
+//
 //              Cache can be cleared by instruction. 
 //              The Cache coherence mechanism isn't implemented yet. I will design
 //              the delicate cache coherence mechanism after design the TLB.
@@ -19,7 +18,6 @@
 //              Write Policy is Write through.
 //
 //              Some tricky problems.
-//              1.How to make data ready in one clock.
 //              If there's a cache hit, data is ready in only one clock; If there's
 //              a cache miss, data is ready whenever the bus is ready. It is a 
 //              little tricky to achieve this, but it is necessary. If cache hits,
@@ -45,12 +43,6 @@
 //              input of onboard ram should be the old (registered) value; if stall
 //              signal is LOW, it means this is a new instruction, the input of onboard
 //              ram should be the new value (directly connected to the next pc or exe).
-//              2.Avoid logic loop
-//              Because the address input has additional combinational logic to select
-//              between direct or registered value, Stall signal is based on cache ready
-//              design can easily trap in to  combinational logic loop. To avoid this
-//              I did some debug, Carefully distinguish which signals should be placed 
-//              in registers.
 //
 
 //DATE:         2020-10-29
@@ -66,7 +58,7 @@ module cache
     clr,
     clk
     //for debug 
-    ,WE_A_o,WE_B_o,WE_C_o,need_update_o,TAG_A_out_o,HIT_A,HIT_B,RAM_A_out
+    WE_A_o,WE_B_o,WE_C_o
 );
 
 //------------------------- Interface description   -----------------------------
@@ -130,22 +122,13 @@ module cache
     input clk;
 
 //for debug
-    output WE_A_o,WE_B_o,WE_C_o,need_update_o,HIT_A,HIT_B;    
-    output [tag_size-1 : 0] TAG_A_out_o;
-    output [31:0] RAM_A_out;
-
-    wire WE_A_o = WE_A;
-    wire WE_B_o = WE_B;
-    wire WE_C_o = WE_C;
-    wire need_update_o = need_update;
-    assign TAG_A_out_o = TAG_A_out;
-
+    output WE_A_o,WE_B_o,WE_C_o;    
 
 //--------------------------    Module implementation  -------------------------
 
 //This pair of parameters describe the range of not cached memory.
-parameter no_cache_start=1111111;
-parameter no_cache_end =1111111;
+parameter no_cache_start=11111;
+parameter no_cache_end =11111;
 
 //Number of Lines in each group.
 localparam cache_lines = 2<< (INDEX -1);
@@ -191,8 +174,6 @@ wire [31:0] addr_reg_o = addr_reg;
 //If cpu is stalled, address should be the registered value to maintain the unfinished
 //request. This is the key to achieve that data should be ready in one clock when there
 //is a cache hit.
-//Some part of this module must use registered value of below to avoid logic loop from
-//CPU_stall to ready_o.
 wire [31:0] addr = CPU_stall ? addr_reg : CPU_addr;
 
 wire [31:0] data = CPU_stall ? data_reg : CPU_data;
@@ -201,24 +182,15 @@ wire        req  = CPU_stall ? CPU_req_reg : CPU_req;
 wire        RW   = CPU_stall ? CPU_RW_reg  : CPU_RW;
 wire  cache_clr  = CPU_stall ? CPU_clr_reg : CPU_clr;
 
-//NO_CACHE is HIGH if requested address is in no cache range.
-//This signal is a registered value. Use a registered value to avoid logic loop.
-reg NO_CACHE;
-always@(posedge clk)
-begin
-    if (clr) 
-        NO_CACHE <= 0;
-    else NO_CACHE <= (addr <= no_cache_end) && (addr >=no_cache_start);
-end
+//HIGH if requested address is in no cache range.
+wire NO_CACHE = (addr <= no_cache_end) && (addr >=no_cache_start);
 
 //vector index is for indexing the whole cache.
 wire [INDEX-1:0] index = addr[INDEX+1 :2];
-wire [INDEX-1:0] index_reg = addr_reg[INDEX+1 :2];
 
 //vector tag is used to determined if there's a cache hit, if not, new tag is written
 //in the tag storage. 
 wire [tag_size-1:0] tag   = addr[31:INDEX+2];
-wire [tag_size-1:0] tag_reg = addr_reg [31:INDEX+2];
 //----------------------------------------------------------------------------------
 
 //Write enable signal for group A B and C.
@@ -241,10 +213,7 @@ reg [tag_size-1 : 0] TAG_A_out, TAG_B_out;
 always @(posedge clk)
 begin
     if (WE_A) 
-        TAG_A [index_reg] = tag_reg;
-    //This is a registered read out. since the index can change according to the
-    //state of CPU, use a continuous read (assign statement) could cause a 
-    //combinational logic loop from CPU_stall to ready.    
+        TAG_A [index] = tag;
     //if read and write at same time, get the new value.
     TAG_A_out <= TAG_A [index];
 end
@@ -253,10 +222,7 @@ end
 always @(posedge clk)
 begin
     if (WE_B)
-        TAG_B [index_reg] = tag_reg;
-    //This is a registered read out. since the index can change according to the
-    //state of CPU, use a continuous read (assign statement) could cause a 
-    //combinational logic loop from CPU_stall to ready.
+        TAG_B [index] = tag;
     //if read and write at same time, get the new value.
     TAG_B_out <= TAG_B [index];
 end
@@ -271,42 +237,27 @@ reg [cache_lines-1:0] VALID_A, VALID_B;
 //is not supported by altera on board RAM, these two blocks synthesize into 
 //registers. 
 
-//as same as TAG & RAM, read address can be directly or from the address
-//register based on the state of the CPU (CPU_stall). Since the write request
-//always effective at the next clock edge, write address should always be the
-//registered value.
 //valid bits for group A.
-reg VALID_A_out ;
 always @(posedge clk)
 begin
     if (clr || cache_clr)
-        VALID_A = 32'b0;
+        VALID_A <= 32'b0;
     else if (WE_A) 
-        VALID_A[index_reg] =1;
-    //This is a registered read out. since the index can change according to the
-    //state of CPU, use a continuous read (assign statement) could cause a 
-    //combinational logic loop from CPU_stall to ready.
-    //If read and write at same time, get the new value.
-    VALID_A_out = VALID_A[index];
+        VALID_A[index] <=1;
 end
-
+//VALID_A_o provides a continuous read out.
+wire VALID_A_out = VALID_A[index];
 
 //valid bits for group B.
-reg VALID_B_out;
 always @(posedge clk)
 begin
     if (clr || cache_clr)
-        VALID_B = 32'b0;
+        VALID_B <= 32'b0;
     else if (WE_B) 
-        VALID_B[index_reg] =1;
-    //This is a registered read out. since the index can change according to the
-    //state of CPU, use a continuous read (assign statement) could cause a 
-    //combinational logic loop from CPU_stall to ready.
-    //If read and write at same time, get the new value.
-    VALID_B_out = VALID_B[index];
+        VALID_B[index] <=1;
 end
-
-
+//VALID_B_o provides a continuous read out.
+wire VALID_B_out = VALID_B[index];
 
 
 //Valid_c is for requests that address is in no cache range.
@@ -342,15 +293,11 @@ reg [31:0] RAM_B [0 : cache_lines-1];
 
 wire [31:0] RAM_in;
 
-//as same as TAG & valid bits, read address can be directly or from the address
-//register based on the state of the CPU (CPU_stall). Since the write request
-//always effective at the next clock edge, write address should always be the
-//registered value.
 reg [31:0] RAM_A_out;
 always @(posedge clk)
 begin
     if (WE_A)
-        RAM_A[index_reg] = RAM_in;
+        RAM_A[index] = RAM_in;
     //if read and write at same time, get the new value.
     RAM_A_out <= RAM_A[index];
 end
@@ -359,7 +306,7 @@ reg [31:0] RAM_B_out;
 always @(posedge clk)
 begin
     if (WE_B)
-        RAM_B[index_reg] = RAM_in;
+        RAM_B[index] = RAM_in;
     //if read and write at same time, get the new value.
     RAM_B_out <= RAM_B[index];
 end
@@ -383,17 +330,17 @@ assign RAM_C_out = RAM_C;
 //------------------------------ BUS interface --------------------------------
 
 //If request is granted by bus controller, put addr on the bus, otherwise high z.
-assign BUS_addr = BUS_grant ? addr_reg : 32'bz;
+assign BUS_addr = BUS_grant ? addr : 32'bz;
 
 //If request is granted, put r/w signal on the bus, otherwise put high z.
-assign BUS_RW = BUS_grant ? CPU_RW_reg : 1'bz;
+assign BUS_RW = BUS_grant ? RW : 1'bz;
 
 //mask out ready signal from bus if not granted, since the ready is for other device.
 wire ready_in = BUS_grant ? BUS_ready : 1'b0;
 
 //BUS_data is bi-direction port. When read, put high z on bus and read from the bus
 //when write, put data on bus.
-wire [31:0] data_to_bus = RW ? data_reg : 32'bz;
+wire [31:0] data_to_bus = RW ? data : 32'bz;
 assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 
 
@@ -406,9 +353,7 @@ assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 //If it's a write request, BUS_req is HIGH when it's a new instruction, otherwise
 //BUS_req will be determined by the registered ready signal. This implements the
 //write through policy.
-//BUS_req is masked by CPU_req_reg, use registered value of cpu req can avoid
-//false req caused by next_PC.
-assign BUS_req = CPU_req_reg && ((~RW && ~CACHE_HIT_R )||(RW && ~ready_reg));
+assign BUS_req = req && ((~RW && ~CACHE_HIT_R && CPU_stall)||(RW && ~ready_reg));
 //-----------------------------------------------------------------------------
 
 //------------------------------ Cache control---------------------------------
@@ -422,7 +367,7 @@ always @(posedge clk)
 begin
     if (~CPU_stall)
         ready_reg <= 0;
-    else if (CPU_req_reg && ready_in)
+    else if (ready_in)
         ready_reg <= 1;
 end
 
@@ -441,21 +386,18 @@ wire CACHE_HIT_R = NO_CACHE ? HIT_C : (HIT_A || HIT_B);
 always @(*)
 begin
     //if there's no request to cache, cache ready is HIGH
-    if (~CPU_req_reg)
+    if (~req)
         ready_o <= 1;
     //If the request is a write request. When and after the bus announced ready
     //The cache is ready. Registered ready signal avoids missing ready signal when
     //CPU is stalled.
-    //rw and req signal should be the registered one to avoid logic loop from
-    //CPU_stall to ready_o.
-    else if (CPU_RW_reg) 
-        //use CPU_req_reg as a mask can filter the HIGH Z on bus ready.
-        ready_o <= (CPU_req_reg && ready_in) || ready_reg;
+    else if (RW) 
+        ready_o <= ready_in | ready_reg;
     //IF the request is a read request. If there is a cache hit, or cache miss but
     //BUS ready, the cache is ready. When cache isn't hit, cache hit signal will be
     //HIGH at the next positive edge of clock when received ready signal from the bus.
     else 
-        ready_o <= (CPU_req_reg && ready_in) || CACHE_HIT_R;
+        ready_o <= ready_in | CACHE_HIT_R;
 end
 
 //Controlling update of the cache. Need to figure out two questions below:
@@ -466,10 +408,7 @@ end
 //select the right group at the right time.
 
 //Whenever there's a request on bus, the cache needs to be updated when bus is ready.
-//Use BUS_grant to indicate a request on bus can avoid HIGH Z signal from the bus 
-//feed into the logic here.(The bus should have a pull down resistor, but I can't
-//simulate the resistor, so use a mask to filter the ready signal) 
-wire need_update = BUS_grant && ready_in;
+wire need_update = BUS_req && ready_in;
 
 //-------------------------------group select mechanism---------------------------
 
@@ -513,12 +452,14 @@ end
 assign WE_A = (~NO_CACHE) && need_update && group_sel[0];
 assign WE_B = (~NO_CACHE) && need_update && group_sel[1];
 
+wire WE_A_o = WE_A;
+wire WE_B_o = WE_B;
+wire WE_C_o = WE_C;
 
 //------------------------------RAM input select--------------------------------
 //If the request is a read request, input of ram should be the data from the bus;
 //If the request is a write request, input of ram should be the data from the CPU;
-//read/write signal should be the registered one to avoid logic loop.
-assign RAM_in = CPU_RW_reg ? data_reg : BUS_data;
+assign RAM_in = RW ? data : BUS_data;
 
 //-------------------------------data output to cpu------------------------------
 always@(*)

@@ -26,14 +26,19 @@ Info: Running Quartus Prime EDA Netlist Writer
     Info: Intel and sold by Intel or its authorized distributors.  Please
     Info: refer to the applicable agreement for further details, at
     Info: https://fpgasoftware.intel.com/eula.
-    Info: Processing started: Sat Nov 14 01:57:16 2020
+    Info: Processing started: Sun Nov 15 22:01:39 2020
 Info: Command: quartus_eda --gen_testbench --tool=modelsim_oem --format=verilog --write_settings_files=off HomeBrewComputer -c HomeBrewComputer --vector_source="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/Waveform6.vwf" --testbench_file="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/Waveform6.vwf.vt"
 Info (119006): Selected device EP4CE22F17C6 for design "HomeBrewComputer"
 Warning (18550): Found RAM instances implemented as ROM because the write logic is disabled. One instance is listed below as an example.
-    Info (119043): Atom "dummy_slave:memory|altsyncram:mem_rtl_0|altsyncram_48e1:auto_generated|ram_block1a0" is instantiated as RAM, but it is actually implemented as ROM function because the write logic is always disabled
+    Info (119043): Atom "dummy_slave:memory|altsyncram:mem_rtl_0|altsyncram_k4e1:auto_generated|ram_block1a0" is instantiated as RAM, but it is actually implemented as ROM function because the write logic is always disabled
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
 
-5): Ignoring output pin "DMA_o[6]" in vector source file when writing test bench files
+nerated Verilog Test Bench File C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/Waveform6.vwf.vt for simulation
+Info: Quartus Prime EDA Netlist Writer was successful. 0 errors, 254 warnings
+    Info: Peak virtual memory: 4643 megabytes
+    Info: Processing ended: Sun Nov 15 22:01:39 2020
+    Info: Elapsed time: 00:00:00
+    Info: Total CPU time (on all processors): 00:00:00
 
 Completed successfully. 
 
@@ -60,17 +65,17 @@ Info: Running Quartus Prime EDA Netlist Writer
     Info: Intel and sold by Intel or its authorized distributors.  Please
     Info: refer to the applicable agreement for further details, at
     Info: https://fpgasoftware.intel.com/eula.
-    Info: Processing started: Sat Nov 14 01:57:16 2020
+    Info: Processing started: Sun Nov 15 22:01:40 2020
 Info: Command: quartus_eda --write_settings_files=off --simulation=on --functional=on --flatten_buses=off --tool=modelsim_oem --format=verilog --output_directory="C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/" HomeBrewComputer -c HomeBrewComputer
 Info (119006): Selected device EP4CE22F17C6 for design "HomeBrewComputer"
 Warning (18550): Found RAM instances implemented as ROM because the write logic is disabled. One instance is listed below as an example.
-    Info (119043): Atom "dummy_slave:memory|altsyncram:mem_rtl_0|altsyncram_48e1:auto_generated|ram_block1a0" is instantiated as RAM, but it is actually implemented as ROM function because the write logic is always disabled
+    Info (119043): Atom "dummy_slave:memory|altsyncram:mem_rtl_0|altsyncram_k4e1:auto_generated|ram_block1a0" is instantiated as RAM, but it is actually implemented as ROM function because the write logic is always disabled
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
 Info (204019): Generated file HomeBrewComputer.vo in folder "C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim//" for EDA simulation tool
 Info: Quartus Prime EDA Netlist Writer was successful. 0 errors, 2 warnings
-    Info: Peak virtual memory: 4650 megabytes
-    Info: Processing ended: Sat Nov 14 01:57:17 2020
-    Info: Elapsed time: 00:00:01
+    Info: Peak virtual memory: 4649 megabytes
+    Info: Processing ended: Sun Nov 15 22:01:40 2020
+    Info: Elapsed time: 00:00:00
     Info: Total CPU time (on all processors): 00:00:01
 
 Completed successfully. 
@@ -93,28 +98,28 @@ Reading C:/intelFPGA_lite/19.1/modelsim_ase/tcl/vsim/pref.tcl
 # ** Warning: (vlib-34) Library already exists at "work".
 
 # Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
-# Start time: 01:57:17 on Nov 14,2020
+# Start time: 22:01:41 on Nov 15,2020
 # vlog -work work HomeBrewComputer.vo 
 # -- Compiling module cache_t
 
 # 
 # Top level modules:
 # 	cache_t
-# End time: 01:57:18 on Nov 14,2020, Elapsed time: 0:00:01
+# End time: 22:01:41 on Nov 15,2020, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0
-# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
 
-# Start time: 01:57:18 on Nov 14,2020
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 22:01:41 on Nov 15,2020
 # vlog -work work Waveform6.vwf.vt 
 # -- Compiling module cache_t_vlg_vec_tst
 # 
 # Top level modules:
 # 	cache_t_vlg_vec_tst
-# End time: 01:57:18 on Nov 14,2020, Elapsed time: 0:00:00
+# End time: 22:01:41 on Nov 15,2020, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0
 
 # vsim -novopt -c -t 1ps -L cycloneive_ver -L altera_ver -L altera_mf_ver -L 220model_ver -L sgate_ver -L altera_lnsim_ver work.cache_t_vlg_vec_tst 
-# Start time: 01:57:18 on Nov 14,2020
+# Start time: 22:01:41 on Nov 15,2020
 # Loading work.cache_t_vlg_vec_tst
 # Loading work.cache_t
 # Loading cycloneive_ver.cycloneive_io_obuf
@@ -127,9 +132,9 @@ Reading C:/intelFPGA_lite/19.1/modelsim_ase/tcl/vsim/pref.tcl
 # Loading altera_ver.PRIM_GDFF_LOW
 # after#25
 
-# ** Note: $finish    : Waveform6.vwf.vt(71)
-#    Time: 1 us  Iteration: 0  Instance: /cache_t_vlg_vec_tst
-# End time: 01:57:18 on Nov 14,2020, Elapsed time: 0:00:00
+# ** Note: $finish    : Waveform6.vwf.vt(87)
+#    Time: 2 us  Iteration: 0  Instance: /cache_t_vlg_vec_tst
+# End time: 22:01:42 on Nov 15,2020, Elapsed time: 0:00:01
 # Errors: 0, Warnings: 0
 
 Completed successfully. 
@@ -142,17 +147,7 @@ Reading C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/Ho
 
 Processing channel transitions... 
 
-Warning: cache:I_cache|HIT_B - signal not found in VCD.
-
-Warning: cache:I_cache|WE_A - signal not found in VCD.
-
-Warning: cache:I_cache|WE_B - signal not found in VCD.
-
-Warning: cache:I_cache|WE_C - signal not found in VCD.
-
-Warning: cache:I_cache|need_update - signal not found in VCD.
-
-Writing the resulting VWF to C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/HomeBrewComputer_20201114015718.sim.vwf
+Writing the resulting VWF to C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/simulation/qsim/HomeBrewComputer_20201115220142.sim.vwf
 
 Finished VCD to VWF conversion.
 

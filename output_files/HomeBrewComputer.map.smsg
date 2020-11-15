@@ -1,11 +1,11 @@
-Warning (10268): Verilog HDL information at cache.v(208): always construct contains both blocking and non-blocking assignments File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 208
-Warning (10268): Verilog HDL information at cache.v(217): always construct contains both blocking and non-blocking assignments File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 217
-Warning (10268): Verilog HDL information at cache.v(292): always construct contains both blocking and non-blocking assignments File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 292
-Warning (10268): Verilog HDL information at cache.v(301): always construct contains both blocking and non-blocking assignments File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 301
-Warning (10273): Verilog HDL warning at cache.v(328): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 328
-Warning (10273): Verilog HDL warning at cache.v(338): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 338
-Warning (10273): Verilog HDL warning at cache.v(339): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 339
-Info (10281): Verilog HDL Declaration information at cache.v(132): object "INDEX" differs only in case from object "index" in the same scope File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 132
+Warning (10268): Verilog HDL information at cache.v(241): always construct contains both blocking and non-blocking assignments File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 241
+Warning (10268): Verilog HDL information at cache.v(253): always construct contains both blocking and non-blocking assignments File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 253
+Warning (10268): Verilog HDL information at cache.v(350): always construct contains both blocking and non-blocking assignments File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 350
+Warning (10268): Verilog HDL information at cache.v(359): always construct contains both blocking and non-blocking assignments File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 359
+Warning (10273): Verilog HDL warning at cache.v(386): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 386
+Warning (10273): Verilog HDL warning at cache.v(396): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 396
+Warning (10273): Verilog HDL warning at cache.v(397): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 397
+Info (10281): Verilog HDL Declaration information at cache.v(154): object "INDEX" differs only in case from object "index" in the same scope File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/cache.v Line: 154
 Warning (10273): Verilog HDL warning at dummy_master.v(85): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master.v Line: 85
 Warning (10273): Verilog HDL warning at dummy_master.v(87): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master.v Line: 87
 Warning (10273): Verilog HDL warning at dummy_master.v(88): extended using "x" or "z" File: C:/Users/Thimble Liu/OneDrive/design/HomeBrewComputer/dummy_master.v Line: 88

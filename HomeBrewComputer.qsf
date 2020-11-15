@@ -50,42 +50,6 @@ set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
 set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.2V
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
-set_global_assignment -name VERILOG_FILE cache_t.v
-set_global_assignment -name VERILOG_FILE cache.v
-set_global_assignment -name VERILOG_FILE bus_t.v
-set_global_assignment -name VECTOR_WAVEFORM_FILE dummy_master_t.vwf
-set_global_assignment -name VERILOG_FILE dummy_master.v
-set_global_assignment -name VERILOG_FILE dummy_slave.v
-set_global_assignment -name VERILOG_FILE bus_control.v
-set_global_assignment -name VERILOG_FILE shifter.v
-set_global_assignment -name VERILOG_FILE regfile.v
-set_global_assignment -name VERILOG_FILE pipe_pc.v
-set_global_assignment -name VERILOG_FILE pipe_m_w_reg.v
-set_global_assignment -name VERILOG_FILE pipe_ir.v
-set_global_assignment -name VERILOG_FILE pipe_if.v
-set_global_assignment -name VERILOG_FILE pipe_id.v
-set_global_assignment -name VERILOG_FILE pipe_exe.v
-set_global_assignment -name VERILOG_FILE pipe_e_m_reg.v
-set_global_assignment -name VERILOG_FILE pipe_d_e_reg.v
-set_global_assignment -name VERILOG_FILE dffe32.v
-set_global_assignment -name VERILOG_FILE cpu.v
-set_global_assignment -name VERILOG_FILE clo_clz.v
-set_global_assignment -name VERILOG_FILE alu.v
-set_global_assignment -name VERILOG_FILE add_sub.v
-set_global_assignment -name VECTOR_WAVEFORM_FILE add_sub_t.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE clo_clz_t.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE shifter_t.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE alu_t.vwf
-set_global_assignment -name SDC_FILE HomeBrewComputer.sdc
-set_global_assignment -name VECTOR_WAVEFORM_FILE dffe32.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE regfile_t.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform.vwf
-set_global_assignment -name QIP_FILE test.qip
-set_global_assignment -name VECTOR_WAVEFORM_FILE bus_control_f.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform1.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE dummy_slave_t.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE bus_t.vwf
-set_global_assignment -name VERILOG_FILE test.v
 set_instance_assignment -name BOARD_MODEL_NEAR_PULLDOWN_R 30000 -to ready_o
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[31]
@@ -153,10 +117,6 @@ set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[3]
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[2]
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[1]
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[0]
-set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform3.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform4.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform5.vwf
-set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform6.vwf
 set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (Verilog)"
 set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
@@ -173,5 +133,46 @@ set_global_assignment -name EDA_TEST_BENCH_FILE simulation/modelsim/cache_t.vt -
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_instance_assignment -name VIRTUAL_PIN ON -to *
+set_global_assignment -name MIF_FILE ram.mif
+set_global_assignment -name VERILOG_FILE cache_t.v
+set_global_assignment -name VERILOG_FILE cache.v
+set_global_assignment -name VERILOG_FILE bus_t.v
+set_global_assignment -name VECTOR_WAVEFORM_FILE dummy_master_t.vwf
+set_global_assignment -name VERILOG_FILE dummy_master.v
+set_global_assignment -name VERILOG_FILE dummy_slave.v
+set_global_assignment -name VERILOG_FILE bus_control.v
+set_global_assignment -name VERILOG_FILE shifter.v
+set_global_assignment -name VERILOG_FILE regfile.v
+set_global_assignment -name VERILOG_FILE pipe_pc.v
+set_global_assignment -name VERILOG_FILE pipe_m_w_reg.v
+set_global_assignment -name VERILOG_FILE pipe_ir.v
+set_global_assignment -name VERILOG_FILE pipe_if.v
+set_global_assignment -name VERILOG_FILE pipe_id.v
+set_global_assignment -name VERILOG_FILE pipe_exe.v
+set_global_assignment -name VERILOG_FILE pipe_e_m_reg.v
+set_global_assignment -name VERILOG_FILE pipe_d_e_reg.v
+set_global_assignment -name VERILOG_FILE dffe32.v
+set_global_assignment -name VERILOG_FILE cpu.v
+set_global_assignment -name VERILOG_FILE clo_clz.v
+set_global_assignment -name VERILOG_FILE alu.v
+set_global_assignment -name VERILOG_FILE add_sub.v
+set_global_assignment -name VECTOR_WAVEFORM_FILE add_sub_t.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE clo_clz_t.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE shifter_t.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE alu_t.vwf
+set_global_assignment -name SDC_FILE HomeBrewComputer.sdc
+set_global_assignment -name VECTOR_WAVEFORM_FILE dffe32.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE regfile_t.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform.vwf
+set_global_assignment -name QIP_FILE test.qip
+set_global_assignment -name VECTOR_WAVEFORM_FILE bus_control_f.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform1.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE dummy_slave_t.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE bus_t.vwf
+set_global_assignment -name VERILOG_FILE test.v
+set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform3.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform4.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform5.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform6.vwf
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to BUS_ready_o
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

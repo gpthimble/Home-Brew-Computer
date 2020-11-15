@@ -54,22 +54,18 @@ end
 integer i =0;
 always @(posedge clk)
 begin
-    if (clr) 
-        i <= 0;
-    else if (~CPU_stall) 
-        i <=i+1;
+    if (~CPU_stall) 
+        i =i+1;
 end
 
 assign next_pc = address[i+1];
 
-//reg CPU_stall;
-//always@(negedge clk)
-//begin
-//   // if (clr) CPU_stall<=0;
-//    //else 
-//    CPU_stall<=~CPU_ready;
-//end
-wire CPU_stall = clr ? 0: ~CPU_ready;
+reg CPU_stall;
+always@(negedge clk)
+begin
+    if (clr) CPU_stall<=0;
+    else CPU_stall<=~CPU_ready;
+end
 
 assign BUS_addr_o=BUS_addr;
 assign BUS_data_o= BUS_data;
@@ -86,5 +82,6 @@ assign grant_o = grant;
 assign next_pc_o = next_pc;
 
 
-
+wire pulldownr = 'L';
+assign BUS_ready = pulldownr;
 endmodule
