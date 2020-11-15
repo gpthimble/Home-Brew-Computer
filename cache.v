@@ -57,6 +57,8 @@ module cache
     BUS_addr, BUS_data, BUS_req, BUS_RW, BUS_grant, BUS_ready,
     clr,
     clk
+    //for debug 
+    ,WE_A_o,WE_B_o,WE_C_o,need_update_o,TAG_A_out_o,HIT_A,HIT_B,RAM_A_out
 );
 
 //------------------------- Interface description   -----------------------------
@@ -119,11 +121,23 @@ module cache
 //clock input
     input clk;
 
+//for debug
+    output WE_A_o,WE_B_o,WE_C_o,need_update_o,HIT_A,HIT_B;    
+    output [tag_size-1 : 0] TAG_A_out_o;
+    output [31:0] RAM_A_out;
+
+    wire WE_A_o = WE_A;
+    wire WE_B_o = WE_B;
+    wire WE_C_o = WE_C;
+    wire need_update_o = need_update;
+    assign TAG_A_out_o = TAG_A_out;
+
+
 //--------------------------    Module implementation  -------------------------
 
 //This pair of parameters describe the range of not cached memory.
-parameter no_cache_start=11111;
-parameter no_cache_end =11111;
+parameter no_cache_start=1111111;
+parameter no_cache_end =1111111;
 
 //Number of Lines in each group.
 localparam cache_lines = 2<< (INDEX -1);
@@ -178,14 +192,21 @@ wire        RW   = CPU_stall ? CPU_RW_reg  : CPU_RW;
 wire  cache_clr  = CPU_stall ? CPU_clr_reg : CPU_clr;
 
 //HIGH if requested address is in no cache range.
-wire NO_CACHE = (addr <= no_cache_end) && (addr >=no_cache_start);
-
+reg NO_CACHE;
+always@(posedge clk)
+begin
+    if (clr) 
+        NO_CACHE <= 0;
+    else NO_CACHE <= (addr <= no_cache_end) && (addr >=no_cache_start);
+end
 //vector index is for indexing the whole cache.
 wire [INDEX-1:0] index = addr[INDEX+1 :2];
+wire [INDEX-1:0] index_reg = addr_reg[INDEX+1 :2];
 
 //vector tag is used to determined if there's a cache hit, if not, new tag is written
 //in the tag storage. 
 wire [tag_size-1:0] tag   = addr[31:INDEX+2];
+wire [tag_size-1:0] tag_reg = addr_reg [31:INDEX+2];
 //----------------------------------------------------------------------------------
 
 //Write enable signal for group A B and C.
@@ -208,7 +229,7 @@ reg [tag_size-1 : 0] TAG_A_out, TAG_B_out;
 always @(posedge clk)
 begin
     if (WE_A) 
-        TAG_A [index] = tag;
+        TAG_A [index_reg] = tag_reg;
     //if read and write at same time, get the new value.
     TAG_A_out <= TAG_A [index];
 end
@@ -217,7 +238,7 @@ end
 always @(posedge clk)
 begin
     if (WE_B)
-        TAG_B [index] = tag;
+        TAG_B [index_reg] = tag_reg;
     //if read and write at same time, get the new value.
     TAG_B_out <= TAG_B [index];
 end
@@ -233,26 +254,29 @@ reg [cache_lines-1:0] VALID_A, VALID_B;
 //registers. 
 
 //valid bits for group A.
+reg VALID_A_out ;
 always @(posedge clk)
 begin
     if (clr || cache_clr)
-        VALID_A <= 32'b0;
+        VALID_A = 32'b0;
     else if (WE_A) 
-        VALID_A[index] <=1;
+        VALID_A[index_reg] =1;
+    VALID_A_out = VALID_A[index];
 end
 //VALID_A_o provides a continuous read out.
-wire VALID_A_out = VALID_A[index];
 
 //valid bits for group B.
+reg VALID_B_out;
 always @(posedge clk)
 begin
     if (clr || cache_clr)
-        VALID_B <= 32'b0;
+        VALID_B = 32'b0;
     else if (WE_B) 
-        VALID_B[index] <=1;
+        VALID_B[index_reg] =1;
+    VALID_B_out = VALID_B[index];
 end
 //VALID_B_o provides a continuous read out.
-wire VALID_B_out = VALID_B[index];
+
 
 
 //Valid_c is for requests that address is in no cache range.
@@ -292,7 +316,7 @@ reg [31:0] RAM_A_out;
 always @(posedge clk)
 begin
     if (WE_A)
-        RAM_A[index] = RAM_in;
+        RAM_A[index_reg] = RAM_in;
     //if read and write at same time, get the new value.
     RAM_A_out <= RAM_A[index];
 end
@@ -301,7 +325,7 @@ reg [31:0] RAM_B_out;
 always @(posedge clk)
 begin
     if (WE_B)
-        RAM_B[index] = RAM_in;
+        RAM_B[index_reg] = RAM_in;
     //if read and write at same time, get the new value.
     RAM_B_out <= RAM_B[index];
 end
@@ -325,17 +349,17 @@ assign RAM_C_out = RAM_C;
 //------------------------------ BUS interface --------------------------------
 
 //If request is granted by bus controller, put addr on the bus, otherwise high z.
-assign BUS_addr = BUS_grant ? addr : 32'bz;
+assign BUS_addr = BUS_grant ? addr_reg : 32'bz;
 
 //If request is granted, put r/w signal on the bus, otherwise put high z.
-assign BUS_RW = BUS_grant ? RW : 1'bz;
+assign BUS_RW = BUS_grant ? CPU_RW_reg : 1'bz;
 
 //mask out ready signal from bus if not granted, since the ready is for other device.
 wire ready_in = BUS_grant ? BUS_ready : 1'b0;
 
 //BUS_data is bi-direction port. When read, put high z on bus and read from the bus
 //when write, put data on bus.
-wire [31:0] data_to_bus = RW ? data : 32'bz;
+wire [31:0] data_to_bus = RW ? data_reg : 32'bz;
 assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 
 
@@ -348,7 +372,7 @@ assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 //If it's a write request, BUS_req is HIGH when it's a new instruction, otherwise
 //BUS_req will be determined by the registered ready signal. This implements the
 //write through policy.
-assign BUS_req = req && ((~RW && ~CACHE_HIT_R && CPU_stall)||(RW && ~ready_reg));
+assign BUS_req = CPU_req_reg && ((~RW && ~CACHE_HIT_R )||(RW && ~ready_reg));
 //-----------------------------------------------------------------------------
 
 //------------------------------ Cache control---------------------------------
@@ -381,12 +405,12 @@ wire CACHE_HIT_R = NO_CACHE ? HIT_C : (HIT_A || HIT_B);
 always @(*)
 begin
     //if there's no request to cache, cache ready is HIGH
-    if (~req)
+    if (~CPU_req_reg)
         ready_o <= 1;
     //If the request is a write request. When and after the bus announced ready
     //The cache is ready. Registered ready signal avoids missing ready signal when
     //CPU is stalled.
-    else if (RW) 
+    else if (CPU_RW_reg) 
         ready_o <= ready_in | ready_reg;
     //IF the request is a read request. If there is a cache hit, or cache miss but
     //BUS ready, the cache is ready. When cache isn't hit, cache hit signal will be
@@ -403,7 +427,7 @@ end
 //select the right group at the right time.
 
 //Whenever there's a request on bus, the cache needs to be updated when bus is ready.
-wire need_update = BUS_req && ready_in;
+wire need_update = BUS_grant && ready_in;
 
 //-------------------------------group select mechanism---------------------------
 
@@ -447,10 +471,11 @@ end
 assign WE_A = (~NO_CACHE) && need_update && group_sel[0];
 assign WE_B = (~NO_CACHE) && need_update && group_sel[1];
 
+
 //------------------------------RAM input select--------------------------------
 //If the request is a read request, input of ram should be the data from the bus;
 //If the request is a write request, input of ram should be the data from the CPU;
-assign RAM_in = RW ? data : BUS_data;
+assign RAM_in = CPU_RW_reg ? data_reg : BUS_data;
 
 //-------------------------------data output to cpu------------------------------
 always@(*)
