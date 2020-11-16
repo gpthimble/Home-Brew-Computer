@@ -211,7 +211,8 @@ always@(posedge clk)
 begin
     if (clr) 
         NO_CACHE <= 0;
-    else NO_CACHE <= (addr <= no_cache_end) && (addr >=no_cache_start);
+    else if (~ CPU_stall) 
+        NO_CACHE <= (addr <= no_cache_end) && (addr >=no_cache_start);
 end
 
 //vector index is for indexing the whole cache.
@@ -249,7 +250,7 @@ begin
     //state of CPU, use a continuous read (assign statement) could cause a 
     //combinational logic loop from CPU_stall to ready.    
     //if read and write at same time, get the new value.
-    TAG_A_out <= TAG_A [index];
+    TAG_A_out = TAG_A [index];
 end
 
 //Memory for TAG_B.
@@ -261,7 +262,7 @@ begin
     //state of CPU, use a continuous read (assign statement) could cause a 
     //combinational logic loop from CPU_stall to ready.
     //if read and write at same time, get the new value.
-    TAG_B_out <= TAG_B [index];
+    TAG_B_out = TAG_B [index];
 end
 //----------------------------------------------------------------------------
 
@@ -352,7 +353,7 @@ begin
     if (WE_A)
         RAM_A[index_reg] = RAM_in;
     //if read and write at same time, get the new value.
-    RAM_A_out <= RAM_A[index];
+    RAM_A_out = RAM_A[index];
 end
 
 reg [31:0] RAM_B_out;
@@ -361,7 +362,7 @@ begin
     if (WE_B)
         RAM_B[index_reg] = RAM_in;
     //if read and write at same time, get the new value.
-    RAM_B_out <= RAM_B[index];
+    RAM_B_out = RAM_B[index];
 end
 
 //RAM_C is for request in no cache range.
@@ -393,7 +394,7 @@ wire ready_in = BUS_grant ? BUS_ready : 1'b0;
 
 //BUS_data is bi-direction port. When read, put high z on bus and read from the bus
 //when write, put data on bus.
-wire [31:0] data_to_bus = RW ? data_reg : 32'bz;
+wire [31:0] data_to_bus = CPU_RW_reg ? data_reg : 32'bz;
 assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 
 
@@ -408,7 +409,8 @@ assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 //write through policy.
 //BUS_req is masked by CPU_req_reg, use registered value of cpu req can avoid
 //false req caused by next_PC.
-assign BUS_req = CPU_req_reg && ((~CPU_RW_reg && ~CACHE_HIT_R )||(CPU_RW_reg && ~ready_reg));
+assign BUS_req = CPU_req_reg && ((~CPU_RW_reg && ~CACHE_HIT_R )
+                ||(CPU_RW_reg && ~ready_reg));
 //-----------------------------------------------------------------------------
 
 //------------------------------ Cache control---------------------------------
@@ -427,8 +429,8 @@ begin
 end
 
 //cache hit signals.
-wire HIT_A = tag == TAG_A_out && VALID_A_out;
-wire HIT_B = tag == TAG_B_out && VALID_B_out;
+wire HIT_A = tag_reg == TAG_A_out && VALID_A_out;
+wire HIT_B = tag_reg == TAG_B_out && VALID_B_out;
 wire HIT_C = VALID_C;
 
 //If request is in no cache range, cache hit signal is from group C. Otherwise,
@@ -498,9 +500,9 @@ reg [1:0] group_sel;
 always @(*)
 begin
     //replace group with the same tag first.
-    if (TAG_A_out == tag)
+    if (TAG_A_out == tag_reg)
         group_sel <= 2'b01;
-    else if (TAG_B_out ==tag)
+    else if (TAG_B_out ==tag_reg)
         group_sel <= 2'b10;
     //if both group is empty or valid, randomly choose one group.
     else if (VALID_A_out == VALID_B_out)
