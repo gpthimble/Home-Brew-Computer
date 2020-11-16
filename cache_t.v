@@ -34,9 +34,10 @@ bus_control bus_control_0 (DMA,grant,BUS_req, BUS_ready,clk);
 dummy_slave memory(clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
 
 //hook up the simulated instruction cache
-cache I_cache (CPU_stall,next_pc, data[i+1], ~clr&1'b1, rw[i+1], 1'b0, CPU_data, CPU_ready, PC,
+cache I_cache (CPU_stall,next_pc , data[i] , 1'b1, rw[i], 1'b0, CPU_data, CPU_ready, PC,
                 BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready, clr, clk,
                 we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out);
+
 
 
 reg [31:0] address [0:7] ;
@@ -77,19 +78,27 @@ begin
     rw[6]= 1 ;
     rw[7]= 0 ;
 end
+//reg start;
+//always @(posedge clk)
+//begin
+//    if (clr)
+//        start <=1;
+//    else start <=0;
+//end
 
 integer i =0;
 always @(posedge clk)
 begin
-    if (clr) 
+    if (clr ) 
         i <= 0;
     else if (~CPU_stall) 
         i <=i+1;
 end
 
-assign next_pc = address[i+1];
-assign next_data = data[i+1];
-assign next_req = rw[i+1];
+
+assign next_pc = address[i] ;
+assign next_data = data[i];
+assign next_req = rw[i];
 
 //reg CPU_stall;
 //always@(negedge clk)
