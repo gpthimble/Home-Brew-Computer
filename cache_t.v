@@ -36,13 +36,13 @@ bus_control bus_control_0 (DMA,grant,BUS_req, BUS_ready,clk);
 dummy_slave memory(clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
 
 //hook up the simulated instruction cache
-cache I_cache (CPU_stall,next_pc , 32'b0 , 1'b1, 1'b0, 1'b0, CPU_data, CPU_ready, PC,
+cache I_cache (CPU_stall,next_pc , 32'b0 , 1'b1, rw[i], 1'b0, CPU_data, CPU_ready, PC,
                 BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready, clr, clk,
                 we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out);
 
 //hook up the simulated data cache
-cache D_cache (CPU_stall,exe_address[i],data[i], exe_req[i], rw[i],1'b0,mem_o,mem_ready,,
-                BUS_addr,BUS_data,DMA[1],BUS_RW, grant[1],BUS_ready ,clr,clk);
+//cache D_cache (CPU_stall,exe_address[i],data[i], exe_req[i], rw[i],1'b0,mem_o,mem_ready,,
+//                BUS_addr,BUS_data,DMA[1],BUS_RW, grant[1],BUS_ready ,clr,clk);
 
 
 //
@@ -51,11 +51,11 @@ initial
 begin
     address[0]= 0 ;
     address[1]= 4 ;
-    address[2]= 0 ; 
-    address[3]= 4 ;
-    address[4]= 8 ;
-    address[5]= 16 ; 
-    address[6]= 0 ; 
+    address[2]= 28 ; 
+    address[3]= 8 ;
+    address[4]= 16 ;
+    address[5]= 4 ; 
+    address[6]= 4 ; 
     address[7]= 4 ; 
 end
 
@@ -102,11 +102,11 @@ reg [7:0] rw;
 initial
 begin
     rw[0]= 0 ;
-    rw[1]= 1 ;
+    rw[1]= 0 ;
     rw[2]= 0 ;
-    rw[3]= 1 ;
+    rw[3]= 0 ;
     rw[4]= 0 ;
-    rw[5]= 0 ;
+    rw[5]= 1 ;
     rw[6]= 1 ;
     rw[7]= 0 ;
 end
@@ -143,7 +143,7 @@ assign next_req = rw[i];
 //    //else 
 //    CPU_stall<=~CPU_ready;
 //end
-wire CPU_stall = clr ? 0: ~(CPU_ready && mem_ready);
+wire CPU_stall = clr ? 0: ~(CPU_ready && 1);
 
 assign BUS_addr_o=BUS_addr;
 assign BUS_data_o= BUS_data;
