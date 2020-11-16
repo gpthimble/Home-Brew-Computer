@@ -5,14 +5,14 @@ clk,clr,
 BUS_addr_o, BUS_data_o, BUS_req_o, BUS_ready_o,BUS_RW_o,
 DMA_o,grant_o,
 CPU_stall_o, CPU_addr_o, CPU_data_o, CPU_ready_o,CPU_stall_in,
-next_pc_o,we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out
+next_pc_o,we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out,next_data,next_req,
 );
 
 input clk,clr,CPU_stall_in;
 
 //These ports are used for testbench output.
-output [31:0] BUS_addr_o, BUS_data_o, CPU_addr_o, CPU_data_o,next_pc_o,RAM_A_out;
-output BUS_req_o, BUS_ready_o,BUS_RW_o,CPU_stall_o,CPU_ready_o,we_a,we_b,we_c,needupdate,hitA,hitB;
+output [31:0] BUS_addr_o, BUS_data_o, CPU_addr_o, CPU_data_o,next_pc_o,RAM_A_out, next_data;
+output BUS_req_o, BUS_ready_o,BUS_RW_o,CPU_stall_o,CPU_ready_o,we_a,we_b,we_c,needupdate,hitA,hitB,next_req;
 output [7:0] DMA_o, grant_o;
 output [23:0] tag;
 
@@ -34,21 +34,48 @@ bus_control bus_control_0 (DMA,grant,BUS_req, BUS_ready,clk);
 dummy_slave memory(clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
 
 //hook up the simulated instruction cache
-cache I_cache (CPU_stall,next_pc, 32'b0, 1'b1, 1'b0, 1'b0, CPU_data, CPU_ready, PC,
+cache I_cache (CPU_stall,next_pc, data[i+1], ~clr&1'b1, rw[i+1], 1'b0, CPU_data, CPU_ready, PC,
                 BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready, clr, clk,
                 we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out);
+
 
 reg [31:0] address [0:7] ;
 initial
 begin
     address[0]= 0 ;
     address[1]= 4 ;
-    address[2]= 8 ;
-    address[3]= 16 ;
-    address[4]= 4 ;
-    address[5]= 24 ;
-    address[6]= 28 ;
-    address[7]= 32 ;
+    address[2]= 0 ; //cache hit
+    address[3]= 16 ;//write
+    address[4]= 16 ;//read
+    address[5]= 8 ; //read
+    address[6]= 8 ; //write
+    address[7]= 8 ; //read
+end
+
+reg [31:0] data [0:7];
+initial
+begin
+    data[0]= 32'hab2112a ;
+    data[1]= 32'hab2112b ;
+    data[2]= 32'hab2112c ;
+    data[3]= 32'hab21123 ;
+    data[4]= 32'hab21124 ;
+    data[5]= 32'hab21128 ;
+    data[6]= 32'hab21129 ;
+    data[7]= 32'hab21121 ;
+end
+
+reg [7:0] rw;
+initial
+begin
+    rw[0]= 0 ;
+    rw[1]= 0 ;
+    rw[2]= 0 ;
+    rw[3]= 1 ;
+    rw[4]= 0 ;
+    rw[5]= 0 ;
+    rw[6]= 1 ;
+    rw[7]= 0 ;
 end
 
 integer i =0;
@@ -61,6 +88,8 @@ begin
 end
 
 assign next_pc = address[i+1];
+assign next_data = data[i+1];
+assign next_req = rw[i+1];
 
 //reg CPU_stall;
 //always@(negedge clk)
