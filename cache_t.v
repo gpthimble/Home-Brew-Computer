@@ -6,6 +6,7 @@ BUS_addr_o, BUS_data_o, BUS_req_o, BUS_ready_o,BUS_RW_o,
 DMA_o,grant_o,
 CPU_stall_o, CPU_addr_o, CPU_data_o, CPU_ready_o,CPU_stall_in,
 next_pc_o,we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out,next_data,next_req,
+,mem_o,mem_ready,
 );
 
 input clk,clr,CPU_stall_in;
@@ -15,7 +16,8 @@ output [31:0] BUS_addr_o, BUS_data_o, CPU_addr_o, CPU_data_o,next_pc_o,RAM_A_out
 output BUS_req_o, BUS_ready_o,BUS_RW_o,CPU_stall_o,CPU_ready_o,we_a,we_b,we_c,needupdate,hitA,hitB,next_req;
 output [7:0] DMA_o, grant_o;
 output [23:0] tag;
-
+output [31:0] mem_o;
+output mem_ready;
 //These wires are internal bus signal.
 wire [31:0] BUS_addr, BUS_data;
 wire BUS_req, BUS_ready, BUS_RW;
@@ -34,23 +36,53 @@ bus_control bus_control_0 (DMA,grant,BUS_req, BUS_ready,clk);
 dummy_slave memory(clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
 
 //hook up the simulated instruction cache
-cache I_cache (CPU_stall,next_pc , data[i] , 1'b1, rw[i], 1'b0, CPU_data, CPU_ready, PC,
+cache I_cache (CPU_stall,next_pc , 32'b0 , 1'b1, 1'b0, 1'b0, CPU_data, CPU_ready, PC,
                 BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready, clr, clk,
                 we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out);
 
+//hook up the simulated data cache
+cache D_cache (CPU_stall,exe_address[i],data[i], exe_req[i], rw[i],1'b0,mem_o,mem_ready,,
+                BUS_addr,BUS_data,DMA[1],BUS_RW, grant[1],BUS_ready ,clr,clk);
 
 
+//
 reg [31:0] address [0:7] ;
 initial
 begin
     address[0]= 0 ;
     address[1]= 4 ;
-    address[2]= 0 ; //cache hit
-    address[3]= 16 ;//write
-    address[4]= 16 ;//read
-    address[5]= 8 ; //read
-    address[6]= 8 ; //write
-    address[7]= 8 ; //read
+    address[2]= 0 ; 
+    address[3]= 4 ;
+    address[4]= 8 ;
+    address[5]= 16 ; 
+    address[6]= 0 ; 
+    address[7]= 4 ; 
+end
+
+reg [31:0] exe_address [0:7];
+initial
+begin
+    exe_address[0]= 0 ;
+    exe_address[1]= 20;
+    exe_address[2]= 0 ;
+    exe_address[3]= 20;
+    exe_address[4]= 20;
+    exe_address[5]= 24;
+    exe_address[6]= 24;
+    exe_address[7]= 24;
+end
+
+reg [31:0] exe_req [0:7];
+initial
+begin
+    exe_req[0]=0;
+    exe_req[1]=1;
+    exe_req[2]=0;
+    exe_req[3]=1;
+    exe_req[4]=1;
+    exe_req[5]=1;
+    exe_req[6]=1;
+    exe_req[7]=1;
 end
 
 reg [31:0] data [0:7];
@@ -70,7 +102,7 @@ reg [7:0] rw;
 initial
 begin
     rw[0]= 0 ;
-    rw[1]= 0 ;
+    rw[1]= 1 ;
     rw[2]= 0 ;
     rw[3]= 1 ;
     rw[4]= 0 ;
@@ -78,6 +110,10 @@ begin
     rw[6]= 1 ;
     rw[7]= 0 ;
 end
+
+////start register is needed for the real cpu instance. since our special address
+////input has additional combinational logic, This register can make sure that
+////first instruction fetched by I cache after clear signal is at 0;
 //reg start;
 //always @(posedge clk)
 //begin
@@ -107,7 +143,7 @@ assign next_req = rw[i];
 //    //else 
 //    CPU_stall<=~CPU_ready;
 //end
-wire CPU_stall = clr ? 0: ~CPU_ready;
+wire CPU_stall = clr ? 0: ~(CPU_ready && mem_ready);
 
 assign BUS_addr_o=BUS_addr;
 assign BUS_data_o= BUS_data;

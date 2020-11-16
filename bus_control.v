@@ -46,7 +46,9 @@ module bus_control(
             end
         //Busy state, in this state, if has a ready, jump to state idle
             1: begin
-                if (ready)
+                //ready signal should be masked by req to avoid High
+                //Z on ready.
+                if (req&ready)
                     state <= 0;
             end
         endcase

@@ -2,21 +2,25 @@
 //DESCRIPTION:  This file implemented the cache module.
 //              
 //              Features
-//              Cache can be cleared by instruction. 
+//              * Cache can be cleared by instruction * 
 //              The Cache coherence mechanism isn't implemented yet. I will design
 //              the delicate cache coherence mechanism after design the TLB.
 //
-//              2-way set associate configuration.
+//              * Request on cached data only need one clock cycle *
+//              This feature is adapted for our five-stage pipeline and delay 
+//              slot for branch.
+//
+//              * 2-way set associate configuration *
 //              The implementation here has a 2-way set associate configuration,
 //              most of the storage should be implemented by on board RAM of FPGA,
 //              the valid RAM is implemented by registers due to lack of clear
 //              support of on board RAM.
 //              
-//              Customize no cache range.
+//              * Customize no cache range *
 //              This feature is used for memory mapped IO and DMA access. Memory
 //              in this range is not cached. (param no_cache_start & no_cache_end)
 //
-//              Write Policy is Write through.
+//              * Write Policy is Write through *
 //
 //              Some tricky problems.
 //              1.How to make data ready in one clock.
@@ -48,12 +52,11 @@
 //              2.Avoid logic loop
 //              Because the address input has additional combinational logic to select
 //              between direct or registered value, Stall signal is based on cache ready
-//              design can easily trap in to  combinational logic loop. To avoid this
+//              design can easily trap in to combinational logic loop. To avoid this
 //              I did some debug, Carefully distinguish which signals should be placed 
 //              in registers.
 //
-
-//DATE:         2020-10-29
+//DATE:         2020-11-14
 //AUTHOR:       Thimble Liu
 
 module cache 
@@ -144,8 +147,8 @@ module cache
 //--------------------------    Module implementation  -------------------------
 
 //This pair of parameters describe the range of not cached memory.
-parameter no_cache_start=1111111;
-parameter no_cache_end =1111111;
+parameter no_cache_start=20;
+parameter no_cache_end =20;
 
 //Number of Lines in each group.
 localparam cache_lines = 2<< (INDEX -1);
@@ -306,9 +309,6 @@ begin
     VALID_B_out = VALID_B[index];
 end
 
-
-
-
 //Valid_c is for requests that address is in no cache range.
 //valid bit for group C is special. Purpose of group C is to make sure that
 //any request on no cache range is cast on the bus. So whenever a new request
@@ -408,7 +408,7 @@ assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 //write through policy.
 //BUS_req is masked by CPU_req_reg, use registered value of cpu req can avoid
 //false req caused by next_PC.
-assign BUS_req = CPU_req_reg && ((~RW && ~CACHE_HIT_R )||(RW && ~ready_reg));
+assign BUS_req = CPU_req_reg && ((~CPU_RW_reg && ~CACHE_HIT_R )||(CPU_RW_reg && ~ready_reg));
 //-----------------------------------------------------------------------------
 
 //------------------------------ Cache control---------------------------------
@@ -524,7 +524,7 @@ assign RAM_in = CPU_RW_reg ? data_reg : BUS_data;
 always@(*)
 begin
     //If the request is a write request, no need to output data to CPU.
-    if (RW)
+    if (CPU_RW_reg)
         data_o <= 32'b0;
     //If the request is a read request. 
     //when the bus ready, data output to cpu is the data from the bus.
