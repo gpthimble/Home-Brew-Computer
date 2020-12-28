@@ -147,8 +147,8 @@ module cache
 //--------------------------    Module implementation  -------------------------
 
 //This pair of parameters describe the range of not cached memory.
-parameter no_cache_start=20;
-parameter no_cache_end =20;
+parameter no_cache_start=8;
+parameter no_cache_end =8;
 
 //Number of Lines in each group.
 localparam cache_lines = 2<< (INDEX -1);
@@ -225,6 +225,37 @@ wire [tag_size-1:0] tag   = addr[31:INDEX+2];
 wire [tag_size-1:0] tag_reg = addr_reg [31:INDEX+2];
 //----------------------------------------------------------------------------------
 
+//----------------------------sniffing from the BUS---------------------------------
+//BUS_addr_reg registered the address bus
+reg [31:0] BUS_addr_reg;
+//BUS_RW_reg registered the write request of the BUS.
+//BUS_grant_reg registered the grant signal for this cache. It is used to identify 
+//whether the currently monitored bus request is issued by itself. The bus request 
+//issued by itself does not need to be monitored. 
+reg BUS_RW_reg, BUS_grant_reg;
+always @ (posedge clk)
+begin
+    if (clr)
+        begin
+            BUS_addr_reg <= 32'b0;
+            BUS_RW_reg   <= 0;
+            BUS_grant_reg<= 0;
+        end
+    else    
+        begin
+            BUS_addr_reg <= BUS_addr;
+            BUS_RW_reg   <= BUS_RW;
+            BUS_grant_reg<= BUS_grant;
+        end
+end
+//sync index from the BUS or BUS register
+wire [INDEX-1:0] index_sync = BUS_addr [INDEX+1 : 2];
+wire [INDEX-1:0] index_sync_reg = BUS_addr_reg [INDEX+1 : 2];
+//sync tag from the BUS or BUS register
+wire [tag_size-1:0] tag_sync = BUS_addr [31:INDEX+2];
+wire [tag_size-1:0] tag_sync_reg = BUS_addr_reg[31:INDEX+2];
+//----------------------------------------------------------------------------------
+
 //Write enable signal for group A B and C.
 wire WE_A, WE_B, WE_C;
 
@@ -241,6 +272,9 @@ reg [tag_size-1 : 0] TAG_B [0 : cache_lines-1];
 //Out put of TAG_A and TAG_B
 reg [tag_size-1 : 0] TAG_A_out, TAG_B_out;
 
+//Out put registers for bus sniffing.
+reg [tag_size-1 : 0] TAG_A_sync_out, TAG_B_sync_out;
+
 //Memory for TAG_A.
 always @(posedge clk)
 begin
@@ -251,6 +285,9 @@ begin
     //combinational logic loop from CPU_stall to ready.    
     //if read and write at same time, get the new value.
     TAG_A_out = TAG_A [index];
+
+    //read for cache sync is index by the bus directly
+    TAG_A_sync_out = TAG_A [index_sync];
 end
 
 //Memory for TAG_B.
@@ -263,6 +300,9 @@ begin
     //combinational logic loop from CPU_stall to ready.
     //if read and write at same time, get the new value.
     TAG_B_out = TAG_B [index];
+
+    //read for cache sync is index by the bus directly
+    TAG_B_sync_out = TAG_B [index_sync];
 end
 //----------------------------------------------------------------------------
 
@@ -287,6 +327,8 @@ begin
         VALID_A = 32'b0;
     else if (WE_A) 
         VALID_A[index_reg] =1;
+    else if (VALID_A_clr)
+        VALID_A[index_sync] =0;
     //This is a registered read out. since the index can change according to the
     //state of CPU, use a continuous read (assign statement) could cause a 
     //combinational logic loop from CPU_stall to ready.
@@ -303,6 +345,8 @@ begin
         VALID_B = 32'b0;
     else if (WE_B) 
         VALID_B[index_reg] =1;
+    else if (VALID_B_clr)
+        VALID_B[index_sync] =0;
     //This is a registered read out. since the index can change according to the
     //state of CPU, use a continuous read (assign statement) could cause a 
     //combinational logic loop from CPU_stall to ready.
@@ -414,6 +458,29 @@ assign BUS_req = CPU_req_reg && ((~CPU_RW_reg && ~CACHE_HIT_R )
 //-----------------------------------------------------------------------------
 
 //------------------------------ Cache control---------------------------------
+//--------------------------------sync control---------------------------------
+//cache_sync signal is HIGH when the sniffed request from the bus is cached. 
+wire cache_sync_A, cache_sync_B;
+//~BUS_grant_reg means that we don't sync the request that issued by itself
+//BUS_RW_reg means that we only sync the write request
+//(tag_sync_reg == TAG_A_sync_out) means that the sync mechanism is active when
+//the sniffed request is cached. 
+assign cache_sync_A = ~BUS_grant_reg & BUS_RW_reg & (tag_sync_reg == TAG_A_sync_out);
+assign cache_sync_B = ~BUS_grant_reg & BUS_RW_reg & (tag_sync_reg == TAG_B_sync_out);
+
+//VALID_X_clr is HIGH when we need to clear the valid bit. 
+wire VALID_A_clr, VALID_B_clr;
+
+//There are two situations here:
+//  1. The monitored request is different from the request to the cache
+//          --Clear valid bit directly
+//  2. The monitored request is the same as the request to the cache
+//          --Clear valid bit only when there's a read hit. 
+assign VALID_A_clr = (BUS_addr_reg == addr_reg) ? 
+                (cache_sync_A & CPU_RW_reg & HIT_A) : cache_sync_A;
+assign VALID_B_clr = (BUS_addr_reg == addr_reg) ? 
+                (cache_sync_B & CPU_RW_reg & HIT_B) : cache_sync_B;
+
 
 //------------------------------cache ready signal-----------------------------
 
@@ -436,7 +503,7 @@ wire HIT_C = VALID_C;
 //If request is in no cache range, cache hit signal is from group C. Otherwise,
 //announce cache hit if there's a hit at group A or B.
 //This signal is used when the request is a read request.
-wire CACHE_HIT_R = NO_CACHE ? HIT_C : (HIT_A || HIT_B);
+wire CACHE_HIT_R = NO_CACHE ? HIT_C : (HIT_A & VALID_A_clr | HIT_B & VALID_B_clr);
 
 //This signal tells CPU that cache is ready. This is a important signal.
 //
