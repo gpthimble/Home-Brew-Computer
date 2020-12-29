@@ -1,4 +1,5 @@
 //testbench for cache
+//test the sync mechanism
 
 module cache_t(
 clk,clr,
@@ -6,7 +7,7 @@ BUS_addr_o, BUS_data_o, BUS_req_o, BUS_ready_o,BUS_RW_o,
 DMA_o,grant_o,
 CPU_stall_o, CPU_addr_o, CPU_data_o, CPU_ready_o,CPU_stall_in,
 next_pc_o,we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out,next_data,next_req,
-,mem_o,mem_ready,
+,mem_o,mem_ready,tag_sync
 );
 
 input clk,clr,CPU_stall_in;
@@ -18,6 +19,7 @@ output [7:0] DMA_o, grant_o;
 output [23:0] tag;
 output [31:0] mem_o;
 output mem_ready;
+output [31:0] tag_sync;
 //These wires are internal bus signal.
 wire [31:0] BUS_addr, BUS_data;
 wire BUS_req, BUS_ready, BUS_RW;
@@ -36,13 +38,13 @@ bus_control bus_control_0 (DMA,grant,BUS_req, BUS_ready,clk);
 dummy_slave memory(clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
 
 //hook up the simulated instruction cache
-cache I_cache (CPU_stall,next_pc , 32'b0 , 1'b1, rw[i], 1'b0, CPU_data, CPU_ready, PC,
+cache I_cache (CPU_stall,next_pc , 32'b0 , 1'b1, 1'b0, 1'b0, CPU_data, CPU_ready, PC,
                 BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready, clr, clk,
-                we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out);
+                we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out,tag_sync);
 
 //hook up the simulated data cache
-//cache D_cache (CPU_stall,exe_address[i],data[i], exe_req[i], rw[i],1'b0,mem_o,mem_ready,,
-//                BUS_addr,BUS_data,DMA[1],BUS_RW, grant[1],BUS_ready ,clr,clk);
+cache D_cache (CPU_stall,exe_address[i],data[i], exe_req[i], rw[i],1'b0,mem_o,mem_ready,,
+                BUS_addr,BUS_data,DMA[1],BUS_RW, grant[1],BUS_ready ,clr,clk);
 
 
 //
@@ -50,12 +52,17 @@ reg [31:0] address [0:7] ;
 initial
 begin
     address[0]= 0 ;
-    address[1]= 4 ;
-    address[2]= 28 ; 
-    address[3]= 8 ;
-    address[4]= 16 ;
-    address[5]= 4 ; 
-    address[6]= 4 ; 
+    //cache sync
+    address[1]= 0 ;
+   
+    address[2]= 0 ; 
+    //cache miss
+    address[3]= 4 ;
+    //cache hit
+    address[4]= 4 ;
+    address[5]= 16 ; 
+    address[6]= 0 ; 
+    //cache sync
     address[7]= 4 ; 
 end
 
@@ -63,11 +70,12 @@ reg [31:0] exe_address [0:7];
 initial
 begin
     exe_address[0]= 0 ;
-    exe_address[1]= 20;
+    //write at 0
+    exe_address[1]= 0;
     exe_address[2]= 0 ;
     exe_address[3]= 20;
     exe_address[4]= 20;
-    exe_address[5]= 24;
+    exe_address[5]= 4;
     exe_address[6]= 24;
     exe_address[7]= 24;
 end
@@ -77,7 +85,7 @@ initial
 begin
     exe_req[0]=0;
     exe_req[1]=1;
-    exe_req[2]=0;
+    exe_req[2]=1;
     exe_req[3]=1;
     exe_req[4]=1;
     exe_req[5]=1;
@@ -102,9 +110,9 @@ reg [7:0] rw;
 initial
 begin
     rw[0]= 0 ;
-    rw[1]= 0 ;
+    rw[1]= 1 ;
     rw[2]= 0 ;
-    rw[3]= 0 ;
+    rw[3]= 1 ;
     rw[4]= 0 ;
     rw[5]= 1 ;
     rw[6]= 1 ;
@@ -143,7 +151,7 @@ assign next_req = rw[i];
 //    //else 
 //    CPU_stall<=~CPU_ready;
 //end
-wire CPU_stall = clr ? 0: ~(CPU_ready && 1);
+wire CPU_stall = clr ? 0: ~(CPU_ready && mem_ready);
 
 assign BUS_addr_o=BUS_addr;
 assign BUS_data_o= BUS_data;

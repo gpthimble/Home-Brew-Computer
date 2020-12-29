@@ -2,9 +2,7 @@
 //DESCRIPTION:  This file implemented the cache module.
 //              
 //              Features
-//              * Cache can be cleared by instruction * 
-//              The Cache coherence mechanism isn't implemented yet. I will design
-//              the delicate cache coherence mechanism after design the TLB.
+//              *cache is automatically synced from the BUS*
 //
 //              * Request on cached data only need one clock cycle *
 //              This feature is adapted for our five-stage pipeline and delay 
@@ -56,7 +54,7 @@
 //              I did some debug, Carefully distinguish which signals should be placed 
 //              in registers.
 //
-//DATE:         2020-11-14
+//DATE:         2020-12-28
 //AUTHOR:       Thimble Liu
 
 module cache 
@@ -69,7 +67,7 @@ module cache
     clr,
     clk
     //for debug 
-    ,WE_A_o,WE_B_o,WE_C_o,need_update_o,TAG_A_out_o,HIT_A,HIT_B,RAM_A_out
+    ,WE_A_o,WE_B_o,WE_C_o,need_update_o,TAG_A_out_o,HIT_A,HIT_B,RAM_A_out,TAG_A_sync
 );
 
 //------------------------- Interface description   -----------------------------
@@ -121,9 +119,10 @@ module cache
 
 //These signals are connected to the BUS, definitions of these signals are same
 //as bus.
-    output [31:0] BUS_addr;
+    inout [31:0] BUS_addr;
     inout  [31:0] BUS_data;
-    output        BUS_req, BUS_RW;
+    output        BUS_req; 
+    inout         BUS_RW;
     input         BUS_ready,BUS_grant;
 
 //clear signal
@@ -142,6 +141,8 @@ module cache
     wire WE_C_o = WE_C;
     wire need_update_o = need_update;
     assign TAG_A_out_o = TAG_A_out;
+    output [31 : 0] TAG_A_sync;
+    assign TAG_A_sync = cache_sync_A;
 
 
 //--------------------------    Module implementation  -------------------------
@@ -477,9 +478,11 @@ wire VALID_A_clr, VALID_B_clr;
 //  2. The monitored request is the same as the request to the cache
 //          --Clear valid bit only when there's a read hit. 
 assign VALID_A_clr = (BUS_addr_reg == addr_reg) ? 
-                (cache_sync_A & CPU_RW_reg & HIT_A) : cache_sync_A;
+                (cache_sync_A & ~CPU_RW_reg & HIT_A) : cache_sync_A;
 assign VALID_B_clr = (BUS_addr_reg == addr_reg) ? 
-                (cache_sync_B & CPU_RW_reg & HIT_B) : cache_sync_B;
+                (cache_sync_B & ~CPU_RW_reg & HIT_B) : cache_sync_B;
+wire HIT_mask ;
+assign HIT_mask = (BUS_addr_reg == addr_reg)? (VALID_A_clr|VALID_B_clr) :0;
 
 
 //------------------------------cache ready signal-----------------------------
@@ -503,7 +506,7 @@ wire HIT_C = VALID_C;
 //If request is in no cache range, cache hit signal is from group C. Otherwise,
 //announce cache hit if there's a hit at group A or B.
 //This signal is used when the request is a read request.
-wire CACHE_HIT_R = NO_CACHE ? HIT_C : (HIT_A & VALID_A_clr | HIT_B & VALID_B_clr);
+wire CACHE_HIT_R = NO_CACHE ? HIT_C : (HIT_A|HIT_B) & ~HIT_mask;
 
 //This signal tells CPU that cache is ready. This is a important signal.
 //
