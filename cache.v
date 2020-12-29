@@ -1,8 +1,17 @@
 //FILE:         cache.v
+//VERSION:      0.3
 //DESCRIPTION:  This file implemented the cache module.
 //              
 //              Features
-//              *cache is automatically synced from the BUS*
+//              *Cache is automatically synced from the BUS*
+//              Cache will monitor all write requests on the bus (except write 
+//              requests issued by itself). 
+//
+//              *Cache request can be canceled without causing a bus error*
+//              The Bus controller is a simple one, it can't process the revoke
+//              operation. The cancellation mechanism can ensure that when the 
+//              request is sent to the bus, the request will not be cancelled but 
+//              wait until the request is completed.
 //
 //              * Request on cached data only need one clock cycle *
 //              This feature is adapted for our five-stage pipeline and delay 
@@ -64,6 +73,7 @@ module cache
     data_o, ready_o,
     addr_reg_o,
     BUS_addr, BUS_data, BUS_req, BUS_RW, BUS_grant, BUS_ready,
+    cancel,
     clr,
     clk
     //for debug 
@@ -124,6 +134,9 @@ module cache
     output        BUS_req; 
     inout         BUS_RW;
     input         BUS_ready,BUS_grant;
+
+//cancel the current request
+    input cancel;
 
 //clear signal
     input clr;
@@ -454,11 +467,31 @@ assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 //write through policy.
 //BUS_req is masked by CPU_req_reg, use registered value of cpu req can avoid
 //false req caused by next_PC.
-assign BUS_req = CPU_req_reg && ((~CPU_RW_reg && ~CACHE_HIT_R )
-                ||(CPU_RW_reg && ~ready_reg));
+//BUS request can be canceled if the request hasn't been sent
+assign BUS_req = CPU_req_reg &(~cancel | req_sent) & ((~CPU_RW_reg & ~CACHE_HIT_R )
+                |(CPU_RW_reg & ~ready_reg));
 //-----------------------------------------------------------------------------
 
 //------------------------------ Cache control---------------------------------
+//-------------------------------cancel mechanism------------------------------
+//The bus controller we used here is a simple controller, it can't handle
+//situations like cancelling the sent request. So when cancel signal is high
+//we need to make sure that the sent request is still there.
+//To achieve this we use a register to indicate whether the request has been 
+//sent during this cycle.
+reg req_sent;
+always @(posedge clk)
+begin
+    if (clr) 
+        req_sent <=0;
+    //req_sent resets when every new instruction is pre-fetched
+    else if (~CPU_stall)
+        req_sent <=0;
+    //req_sent goes high when the cache request the bus. 
+    else if (BUS_req)
+        req_sent <=1;
+end
+
 //--------------------------------sync control---------------------------------
 //cache_sync signal is HIGH when the sniffed request from the bus is cached. 
 wire cache_sync_A, cache_sync_B;
@@ -514,6 +547,9 @@ always @(*)
 begin
     //if there's no request to cache, cache ready is HIGH
     if (~CPU_req_reg)
+        ready_o <= 1;
+    //if the request has been canceled, cache ready is HIGH
+    else if (cancel & ~req_sent)
         ready_o <= 1;
     //If the request is a write request. When and after the bus announced ready
     //The cache is ready. Registered ready signal avoids missing ready signal when

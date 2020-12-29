@@ -8,9 +8,10 @@ DMA_o,grant_o,
 CPU_stall_o, CPU_addr_o, CPU_data_o, CPU_ready_o,CPU_stall_in,
 next_pc_o,we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out,next_data,next_req,
 ,mem_o,mem_ready,tag_sync
+,cancle_I
 );
 
-input clk,clr,CPU_stall_in;
+input clk,clr,CPU_stall_in,cancle_I;
 
 //These ports are used for testbench output.
 output [31:0] BUS_addr_o, BUS_data_o, CPU_addr_o, CPU_data_o,next_pc_o,RAM_A_out, next_data;
@@ -39,12 +40,12 @@ dummy_slave memory(clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
 
 //hook up the simulated instruction cache
 cache I_cache (CPU_stall,next_pc , 32'b0 , 1'b1, 1'b0, 1'b0, CPU_data, CPU_ready, PC,
-                BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready, clr, clk,
+                BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready,cancle_I, clr, clk,
                 we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out,tag_sync);
 
 //hook up the simulated data cache
 cache D_cache (CPU_stall,exe_address[i],data[i], exe_req[i], rw[i],1'b0,mem_o,mem_ready,,
-                BUS_addr,BUS_data,DMA[1],BUS_RW, grant[1],BUS_ready ,clr,clk);
+                BUS_addr,BUS_data,DMA[1],BUS_RW, grant[1],BUS_ready,1'b0 ,clr,clk);
 
 
 //
