@@ -161,8 +161,8 @@ module cache
 //--------------------------    Module implementation  -------------------------
 
 //This pair of parameters describe the range of not cached memory.
-parameter no_cache_start=8;
-parameter no_cache_end =8;
+parameter no_cache_start=0;
+parameter no_cache_end =0;
 
 //Number of Lines in each group.
 localparam cache_lines = 2<< (INDEX -1);
@@ -342,7 +342,7 @@ begin
     else if (WE_A) 
         VALID_A[index_reg] =1;
     else if (VALID_A_clr)
-        VALID_A[index_sync] =0;
+        VALID_A[index_sync_reg] =0;
     //This is a registered read out. since the index can change according to the
     //state of CPU, use a continuous read (assign statement) could cause a 
     //combinational logic loop from CPU_stall to ready.
@@ -360,7 +360,7 @@ begin
     else if (WE_B) 
         VALID_B[index_reg] =1;
     else if (VALID_B_clr)
-        VALID_B[index_sync] =0;
+        VALID_B[index_sync_reg] =0;
     //This is a registered read out. since the index can change according to the
     //state of CPU, use a continuous read (assign statement) could cause a 
     //combinational logic loop from CPU_stall to ready.
@@ -385,6 +385,8 @@ begin
     //clear valid_c for every new request, since every request into no cache zone
     //should be cast to the bus, this provide the necessary cache miss signal.
     if ((~CPU_stall) || clr )
+        VALID_C <= 0;
+    else if (VALID_C_clr)
         VALID_C <= 0;
     else if (WE_C) 
         VALID_C <= 1;
@@ -488,22 +490,24 @@ begin
     else if (~CPU_stall)
         req_sent <=0;
     //req_sent goes high when the cache request the bus. 
-    else if (BUS_req)
+    else if (BUS_grant)
         req_sent <=1;
 end
 
 //--------------------------------sync control---------------------------------
 //cache_sync signal is HIGH when the sniffed request from the bus is cached. 
-wire cache_sync_A, cache_sync_B;
+wire cache_sync_A, cache_sync_B, cache_sync_C;
 //~BUS_grant_reg means that we don't sync the request that issued by itself
 //BUS_RW_reg means that we only sync the write request
 //(tag_sync_reg == TAG_A_sync_out) means that the sync mechanism is active when
 //the sniffed request is cached. 
 assign cache_sync_A = ~BUS_grant_reg & BUS_RW_reg & (tag_sync_reg == TAG_A_sync_out);
 assign cache_sync_B = ~BUS_grant_reg & BUS_RW_reg & (tag_sync_reg == TAG_B_sync_out);
+assign cache_sync_C = ~BUS_grant_reg & BUS_RW_reg & NO_CACHE 
+                        & (BUS_addr_reg == addr_reg);
 
 //VALID_X_clr is HIGH when we need to clear the valid bit. 
-wire VALID_A_clr, VALID_B_clr;
+wire VALID_A_clr, VALID_B_clr, VALID_C_clr;
 
 //There are two situations here:
 //  1. The monitored request is different from the request to the cache
@@ -514,8 +518,14 @@ assign VALID_A_clr = (BUS_addr_reg == addr_reg) ?
                 (cache_sync_A & ~CPU_RW_reg & HIT_A) : cache_sync_A;
 assign VALID_B_clr = (BUS_addr_reg == addr_reg) ? 
                 (cache_sync_B & ~CPU_RW_reg & HIT_B) : cache_sync_B;
+
+//for valid bit C, if the current request has registered in group C,
+//clear the valid bit C and mask out the read hit signal. 
+assign VALID_C_clr = cache_sync_C;
+
 wire HIT_mask ;
-assign HIT_mask = (BUS_addr_reg == addr_reg)? (VALID_A_clr|VALID_B_clr) :0;
+assign HIT_mask = (BUS_addr_reg == addr_reg)? 
+                (VALID_A_clr|VALID_B_clr|VALID_C_clr) :0;
 
 
 //------------------------------cache ready signal-----------------------------
@@ -539,7 +549,7 @@ wire HIT_C = VALID_C;
 //If request is in no cache range, cache hit signal is from group C. Otherwise,
 //announce cache hit if there's a hit at group A or B.
 //This signal is used when the request is a read request.
-wire CACHE_HIT_R = NO_CACHE ? HIT_C : (HIT_A|HIT_B) & ~HIT_mask;
+wire CACHE_HIT_R = (NO_CACHE ? HIT_C : (HIT_A|HIT_B)) & ~HIT_mask;
 
 //This signal tells CPU that cache is ready. This is a important signal.
 //
