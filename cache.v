@@ -386,10 +386,10 @@ begin
     //should be cast to the bus, this provide the necessary cache miss signal.
     if ((~CPU_stall) || clr )
         VALID_C <= 0;
-    else if (VALID_C_clr)
-        VALID_C <= 0;
     else if (WE_C) 
         VALID_C <= 1;
+    else if (VALID_C_clr)
+        VALID_C <= 0;
 end
 //another name for valid_C.
 wire VALID_C_out = VALID_C;
@@ -433,7 +433,7 @@ reg [31:0] RAM_C;
 wire [31:0] RAM_C_out;
 
 always @(posedge clk)
-begin
+begin 
     if (WE_C)
         RAM_C <= RAM_in;
 end
@@ -487,7 +487,8 @@ begin
     if (clr) 
         req_sent <=0;
     //req_sent resets when every new instruction is pre-fetched
-    else if (~CPU_stall)
+    //req_sent is reset when a new request is coming or the request is done. 
+    else if (~CPU_stall|ready_in)
         req_sent <=0;
     //req_sent goes high when the cache request the bus. 
     else if (BUS_grant)
@@ -503,7 +504,7 @@ wire cache_sync_A, cache_sync_B, cache_sync_C;
 //the sniffed request is cached. 
 assign cache_sync_A = ~BUS_grant_reg & BUS_RW_reg & (tag_sync_reg == TAG_A_sync_out);
 assign cache_sync_B = ~BUS_grant_reg & BUS_RW_reg & (tag_sync_reg == TAG_B_sync_out);
-assign cache_sync_C = ~BUS_grant_reg & BUS_RW_reg & NO_CACHE 
+assign cache_sync_C = ~BUS_grant_reg & BUS_RW_reg & NO_CACHE & HIT_C
                         & (BUS_addr_reg == addr_reg);
 
 //VALID_X_clr is HIGH when we need to clear the valid bit. 
