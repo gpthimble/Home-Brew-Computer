@@ -50,7 +50,7 @@ module control_unit(
     //clock input
     clk,
     //synchronize clear signal
-    clr
+    clr,
 );
     //######################## Interface description ###########################
     //-------------------------Instruction from IF stage -----------------------

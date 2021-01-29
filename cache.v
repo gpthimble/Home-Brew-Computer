@@ -526,7 +526,7 @@ assign VALID_C_clr = cache_sync_C;
 
 wire HIT_mask ;
 assign HIT_mask = (BUS_addr_reg == addr_reg)? 
-                (VALID_A_clr|VALID_B_clr|VALID_C_clr) :0;
+                (VALID_A_clr|VALID_B_clr|VALID_C_clr) : 1'b0;
 
 
 //------------------------------cache ready signal-----------------------------
