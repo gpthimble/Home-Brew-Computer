@@ -1,13 +1,15 @@
 //cpu.v
 //This module implements the CPU. 
 
-module CPU (
+module cpu (
     //interface to the BUS
     BUS_addr, BUS_data, BUS_RW, BUS_ready,
     //interface to the BUS controller
     BUS_req_I, BUS_req_D, BUS_grant_I, BUS_grant_D,
     //interface to the interrupt controller
-    int_in, int_ack, int_num,
+    int_in, 
+    int_ack, 
+    int_num,
     //clock and synchronized clear
     clr, clk,
     //for debugging
@@ -106,6 +108,7 @@ module CPU (
     //signals for branch predictor
     wire BP_miss, is_branch,do_branch,V_target;
     wire [31:0] BP_target;
+    wire int_rec;
 
     //pipeline registers between ID and EXE stage
     reg E_canceled;
@@ -173,7 +176,7 @@ module CPU (
         else if (~(stall_IF_ID|CPU_stall)) begin
                 ID_canceled <= ban_IF;
                 ID_PC       <= PC;
-                instruction <= I_cache_out;
+                instruction <= ban_IF ? 32'b0 : I_cache_out;
         end
     end
 //--------------------------------ID stage---------------------------------- 
@@ -191,7 +194,7 @@ control_unit CU_0 (
     AluFunc,ExeSelect,
     M_TargetReg,M_M2Reg,M_RegWrite, E_TargetReg_out, E_M2Reg,E_RegWrite,
     E_AluOut, M_AluOut, M_MemOut ,
-    M_MemAddr, M_MemWrite,
+    M_MemAddr, M_MemWrite &~M_canceled,
     I_cache_ready,D_cache_ready,
     CPU_stall,stall_IF_ID,
     BP_miss,is_branch,do_branch,V_target,BP_target,
@@ -200,9 +203,10 @@ control_unit CU_0 (
     exc_IF,exc_EXE,exc_MEM,
     IF_cause,EXE_cause,MEM_cause,
     ban_IF,ban_ID,ban_EXE,ban_MEM,
-    int_num,int_in,int_ack,
+    int_num,int_in,int_rec,
     clk,clr
 );
+assign int_ack = int_rec & ~CPU_stall;
 //---------------------register between ID and EXE stage---------------------
     always @(posedge clk) begin
         if (clr)begin
@@ -406,7 +410,7 @@ wire M_misaligned = (M_LoadMask | M_StoreMask) & M_B_HW & offset[0];
 //add other exceptions here
 //...
 //signal the exception to CU. 
-assign exc_MEM = M_misaligned;
+assign exc_MEM = M_misaligned & ~M_canceled;
 //set the cause of exception
 always @(*) begin
     if (M_misaligned) begin
@@ -441,6 +445,5 @@ end
 //-----------------------------WB stage--------------------------------------
 
 assign W_RegDate_in = W_M2Reg ? W_db : W_da;
-
 
 endmodule

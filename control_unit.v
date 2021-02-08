@@ -46,7 +46,7 @@ module control_unit(
     //interrupt input
     int_in,
     //interrupt accept output 
-    int_ack,
+    int_rec,
     //clock input
     clk,
     //synchronize clear signal
@@ -61,13 +61,13 @@ module control_unit(
     input [31:0] instruction;
     //If the pre-fetched instruction has been canceled at IF stage, CU treats it
     //as a nop instruction. 
-    wire [5:0] op = canceled ? 6'b0 : instruction [31:26];
+    wire [5:0] op =   instruction [31:26];
     output [4:0] rs ;
-    assign rs = canceled ? 5'b0 : instruction [25:21];
+    assign rs = instruction [25:21];
     output [4:0] rt ;
-    assign rt = canceled ? 5'b0 : instruction [20:16];
-    wire [4:0] rd = canceled ? 5'b0 : instruction [15:11];
-    wire [5:0] func = canceled ? 6'b0 : instruction [5:0];
+    assign rt = instruction [20:16];
+    wire [4:0] rd =  instruction [15:11];
+    wire [5:0] func = instruction [5:0];
 
 
     //--------------------Input from Register File------------------------------
@@ -169,7 +169,7 @@ module control_unit(
 
     //for interrupt
     input int_in;
-    output int_ack;
+    output int_rec;
     input [19:0] int_num;
 
     //-----------------for clock and synchronize clear------------------------------
@@ -692,14 +692,14 @@ module control_unit(
     //When to response to an interrupt request
     wire int_mask = CP0_Reg[1][0];
     wire int_allow =  int_mask &~BP_miss & ~Stall_IF_ID & ~exc_ack & ~SMC_ack
-                        &~i_mtc0 &~CPU_stall;
+                        &~i_mtc0 ;
 
     //When there is an external interrupt and the external interrupt is enabled,
     //or a software interrupt 
     //or an exception occurs, the processor jumps to the base register
-    //int_ack is HIGH to indicate that CPU is going to jump to base register at
+    //int_rec is HIGH to indicate that CPU is going to jump to base register at
     //next clock cycle. 
-    assign int_ack = int_allow & int_in;
+    assign int_rec = int_allow & int_in;
 
     //----------------------------self-modify code-------------------------------
     //self modify code  has an impact on IF ID and EXE stage. 
@@ -976,7 +976,7 @@ module control_unit(
             end
         end
         //interrupt only answered when the system is ready
-        else if (int_ack) begin
+        else if (int_rec) begin
                 //update the status register
                 update_STATUS_exc =1;
                 STATUS_exc_in = CP0_Reg[1] | 32'b11111111111111111111111111111110;

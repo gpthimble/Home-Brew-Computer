@@ -42,7 +42,7 @@ dummy_slave memory(clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
 defparam I_cache.INDEX = 1;
 cache I_cache (CPU_stall,next_pc , 32'b0 , 1'b1, rw[i], 1'b0, CPU_data, CPU_ready, PC,
                 BUS_addr, BUS_data, DMA[0], BUS_RW, grant[0], BUS_ready, clr, clk,
-                we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out);
+                we_a,we_b,we_c,needupdate,tag,hitA,hitB,RAM_A_out,,);
 
 //hook up the simulated data cache
 //cache D_cache (CPU_stall,exe_address[i],data[i], exe_req[i], rw[i],1'b0,mem_o,mem_ready,,
