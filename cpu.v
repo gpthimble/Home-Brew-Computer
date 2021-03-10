@@ -106,8 +106,12 @@ module cpu (
     //exception number 
     reg [2:0] IF_cause,EXE_cause,MEM_cause;
     //signals for branch predictor
-    wire BP_miss, is_branch,do_branch,V_target;
-    wire [31:0] BP_target;
+    wire BP_miss;
+    wire [31:0] epc,BP_target,bpc,no_br_pc;
+    reg  [31:0] br_target;
+    wire i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
+            i_bgtz,i_beq,i_bne;
+
     wire int_rec;
 
     //pipeline registers between ID and EXE stage
@@ -118,6 +122,10 @@ module cpu (
     reg E_StoreMask,E_LoadMask,E_B_HW,E_LoadSign;
     reg [3:0] E_AluFunc;
     reg [1:0] E_ExeSelect;
+    reg [31:0] E_ins, E_epc,E_bpc,E_no_br_pc;
+
+    reg E_i_j,E_i_jal,E_i_jr,E_i_jalr,E_i_eret,E_i_bgez,E_i_bgezal,
+            E_i_bltz,E_i_bltzal,E_i_blez,E_i_bgtz,E_i_beq,E_i_bne;
 
     //EXE stage output
     reg [31:0] E_AluOut;
@@ -197,7 +205,9 @@ control_unit CU_0 (
     M_MemAddr, M_MemWrite &~M_canceled,
     I_cache_ready,D_cache_ready,
     CPU_stall,stall_IF_ID,
-    BP_miss,is_branch,do_branch,V_target,BP_target,
+    BP_miss,epc,BP_target,br_target,bpc,no_br_pc,
+    i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
+            i_bgtz,i_beq,i_bne,
     next_PC,
     PC,ID_PC,E_PC,M_PC,
     exc_IF,exc_EXE,exc_MEM,
@@ -230,7 +240,25 @@ assign int_ack = int_rec & ~CPU_stall;
             E_B_HW     <=  1'b0;
             E_LoadSign <=  1'b0;
             E_AluFunc  <=  4'b0;
-            E_ExeSelect<=  2'b0;
+
+            E_ins      <= 32'b0;
+            E_epc      <= 32'b0;
+            E_i_j      <=  1'b0;
+            E_i_jal    <=  1'b0;
+            E_i_jr     <=  1'b0;
+            E_i_jalr   <=  1'b0;
+            E_i_eret   <=  1'b0;
+            E_i_bgez   <=  1'b0;
+            E_i_bgezal <=  1'b0;
+            E_i_bltz   <=  1'b0;
+            E_i_bltzal <=  1'b0;
+            E_i_blez   <=  1'b0;
+            E_i_bgtz   <=  1'b0;
+            E_i_beq    <=  1'b0;
+            E_i_bne    <=  1'b0;
+            E_bpc      <= 32'b0;
+            E_no_br_pc <= 32'b0;
+
         end
         else if(~CPU_stall) begin
             E_canceled <= ID_canceled | ban_ID;
@@ -253,10 +281,79 @@ assign int_ack = int_rec & ~CPU_stall;
             E_B_HW     <= B_HW     ;
             E_LoadSign <= LoadSign ;
             E_AluFunc  <= AluFunc  ;
-            E_ExeSelect<= ExeSelect;    
+
+            E_ins      <=  instruction;
+            E_epc      <=  epc;
+            E_i_j      <=  i_j     ;
+            E_i_jal    <=  i_jal   ;
+            E_i_jr     <=  i_jr    ;
+            E_i_jalr   <=  i_jalr  ;
+            E_i_eret   <=  i_eret  ;
+            E_i_bgez   <=  i_bgez  ;
+            E_i_bgezal <=  i_bgezal;
+            E_i_bltz   <=  i_bltz  ;
+            E_i_bltzal <=  i_bltzal;
+            E_i_blez   <=  i_blez  ;
+            E_i_bgtz   <=  i_bgtz  ;
+            E_i_beq    <=  i_beq   ;
+            E_i_bne    <=  i_bne   ;
+            E_bpc      <= bpc;
+            E_no_br_pc <= no_br_pc;
+            
+
+   
         end
     end
 //-----------------------------EXE stage-------------------------------------
+//calculate branch target
+    //Jump target for J/Jal instruction. Different with the original MIPS 32 instruction. 
+    //This CPU don't have delay slot, so upper bit of the target is the corresponding
+    //bits of the address of the branch instruction itself. 
+    wire [31:0] jpc = {E_PC[31:28],E_ins[25:0],2'b00};
+
+
+    //Target address for jump register instructions
+    wire [31:0] rpc = E_da;
+
+
+    wire   rs_equal_0,rs_rt_equal,rs_less_than_0;
+    assign rs_equal_0 = (E_da ==  32'b0);
+    assign rs_rt_equal = (E_da == E_db);
+    assign rs_less_than_0 = E_da[31];
+    //select the correct branch target
+
+    always @(*) begin
+         //unconditional branch instructions
+        if (E_i_j|E_i_jal)          br_target = jpc;
+        //unconditional branch register instructions
+        else if (E_i_jr|E_i_jalr)   br_target = rpc;
+        //return from exception
+        else if (E_i_eret)        br_target = E_epc;
+        //conditional branch instructions
+        else if (((E_i_bgez|E_i_bgezal)&(~rs_less_than_0))|((E_i_bltz|E_i_bltzal)&rs_less_than_0)
+            |(E_i_blez&(rs_less_than_0|rs_equal_0))|(E_i_beq&rs_rt_equal)|(E_i_bne&(~rs_rt_equal))
+             |(E_i_bgtz&(~rs_less_than_0 & ~ rs_equal_0)))
+                                br_target = E_bpc;
+        //normal target
+        else                    br_target = E_no_br_pc;
+    
+    end
+
+    //These signals are used for the branch predictor. 
+    //is_branch is HIGH if current instruction in ID stage is a branch instruction. 
+    //This signal with ID_PC together, can let the branch predictor know that
+    //an address holds a branch instruction, then the BP can assign a slot for
+    //that address.
+    assign is_branch =(E_i_j|E_i_jal|E_i_jr|E_i_jalr|E_i_bgez|E_i_bgezal|E_i_bltz
+               |E_i_bltzal|E_i_blez|E_i_bgtz|E_i_beq|E_i_bne|E_i_eret)&~E_canceled;
+    //Some of the branch instructions such as j and jal have fixed target, while
+    //some branch instructions such as jr and jalr have  variable target. 
+    //The branch predictor must understand these conditions when making predictions. 
+    assign V_target = E_i_jr | E_i_jalr | E_i_eret;
+//generate BP_miss
+assign BP_miss = is_branch ? (ID_PC != br_target) : 1'b0;
+
+
 wire [31:0] alu_in_A, alu_in_B, alu_result;
 assign alu_in_A = E_ShiftImm ? E_imm : E_da;
 assign alu_in_B = E_AluImm ? E_imm : E_db;
@@ -398,7 +495,7 @@ assign LoadMask_ext = M_B_HW ?
                     ({ {16{e}},LoadMask_no_ext[15:0]}) : 
                     ({ {24{e}},LoadMask_no_ext[7:0]}) ;
 wire [31:0] LoadMask_out;
-assign LoadMask_out = LoadSign ? LoadMask_ext : LoadMask_no_ext;
+assign LoadMask_out = M_LoadSign ? LoadMask_ext : LoadMask_no_ext;
 //connect masked result to the cache
 assign D_cache_din = M_StoreMask ? StoreMask_in : M_db;
 //connect masked result to the next stage

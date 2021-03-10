@@ -29,7 +29,9 @@ module control_unit(
     I_cache_R, D_cache_R,
     CPU_stall, Stall_IF_ID, 
     //signals for branch predictor
-    BP_miss,is_branch,do_branch,V_target,BP_target,
+    BP_miss,epc,BP_target,br_target,bpc,no_br_pc,
+    i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
+           i_bgtz,i_beq,i_bne,
     //next PC is calculated within CU
     next_PC,
     //PC in different stage
@@ -150,10 +152,14 @@ module control_unit(
     //BP_miss is active when branch predictor missed.
     //do_branch is active when a branch takes in place.
     //These two signal output is for the branch predictor to generate there history table. 
-    output BP_miss;
-    output do_branch;
-    output is_branch,V_target;
+    input BP_miss;
+    output [31:0] epc,bpc,no_br_pc;
+    assign epc = CP0_Reg[3];
     input [31:0] BP_target;
+    input [31:0] br_target;
+
+    output i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
+            i_bgtz,i_beq,i_bne;
     //These signals abandon the instruction in each stage. Instruction should be abandoned
     //when there's a pipe line event such as BP_miss, exception,etc.
     output reg ban_IF,ban_EXE,ban_MEM;
@@ -329,7 +335,7 @@ module control_unit(
     //overflow exception selecting corresponding comparator for set less than operations.
     //All the offset in the instructions are signed.
     assign sign = i_bgez|i_bgezal|i_bltz|i_bltzal|i_beq|i_bne|i_blez|i_bgtz|i_addi|i_slti
-                    |i_lb|i_lh|i_lw|i_lbu|i_lhu|i_sb|i_sh|i_sw|i_add|i_sub|i_slt;
+                    |i_lb|i_lh|i_lw|i_lbu|i_lhu|i_sb|i_sh|i_sw|i_addiu|i_sltiu;
 
     //StoreMask select the masked value as the input of memory. This signal is active
     //at the second cycle of store byte and store half word. 
@@ -579,27 +585,29 @@ module control_unit(
     //ban_ID_RAW has lower priority, it can't mask out the Stall_RAW but ban_ID_EXC can.
     assign ban_ID = ban_ID_RAW |ban_ID_EXC;
     
-    //------------------------Branch and Branch Prediction----------------------
-    //I have implement a simple static branch predictor, which always 
-    //predicts the branch not happen. When a branch instruction is decoded and
-    //the result of branch is calculated, CU compare the branch result with PC,
-    //if prediction is wrong, abandon the pre-fetched instruction. 
-
-    //Jump target for J/Jal instruction. Different with the original MIPS 32 instruction. 
-    //This CPU don't have delay slot, so upper bit of the target is the corresponding
-    //bits of the address of the branch instruction itself. 
-    wire [31:0] jpc = {ID_PC[31:28],instruction[25:0],2'b00};
-
+    ////------------------------Branch and Branch Prediction----------------------
+    ////I have implement a simple static branch predictor, which always 
+    ////predicts the branch not happen. When a branch instruction is decoded and
+    ////the result of branch is calculated, CU compare the branch result with PC,
+    ////if prediction is wrong, abandon the pre-fetched instruction. 
+//
+    ////Jump target for J/Jal instruction. Different with the original MIPS 32 instruction. 
+    ////This CPU don't have delay slot, so upper bit of the target is the corresponding
+    ////bits of the address of the branch instruction itself. 
+    //wire [31:0] jpc = {ID_PC[31:28],instruction[25:0],2'b00};
+//
     //Branch offset for conditional branch instructions. 
     wire [31:0] br_offset = {imm[29:0],2'b00};
     //Target address for conditional branch instructions. 
-    wire [31:0] bpc = br_offset + ID_PC;
+    assign bpc = br_offset + ID_PC;
 
-    //Target address for jump register instructions
-    wire [31:0] rpc = regA;
+    assign no_br_pc = ID_PC +4;
+//
+    ////Target address for jump register instructions
+    //wire [31:0] rpc = regA;
+//
+    ////Target address for eret instruction. 
 
-    //Target address for eret instruction. 
-    wire [31:0] epc = CP0_Reg[3];
 
     
     //signals for conditional branch. 
@@ -609,21 +617,22 @@ module control_unit(
     assign rs_less_than_0 = regA[31];
 
     //select the correct branch target
-    reg [31:0] br_target;
-    always @(*) begin
-         //unconditional branch instructions
-        if (i_j|i_jal)          br_target = jpc;
-        //unconditional branch register instructions
-        else if (i_jr|i_jalr)   br_target = rpc;
-        //return from exception
-        else if (i_eret)        br_target = epc;
-        //conditional branch instructions
-        else if (((i_bgez|i_bgezal)&(~rs_less_than_0))|((i_bltz|i_bltzal)&rs_less_than_0)
-            |(i_blez&(rs_less_than_0|rs_equal_0))|(i_beq&rs_rt_equal)|(i_bne&(~rs_rt_equal)))
-                                br_target = bpc;
-        //normal target
-        else                    br_target = ID_PC + 4;
-    end
+    //reg [31:0] br_target;
+    //always @(*) begin
+    //     //unconditional branch instructions
+    //    if (i_j|i_jal)          br_target = jpc;
+    //    //unconditional branch register instructions
+    //   // else if (i_jr|i_jalr)   br_target = rpc;
+    //    //return from exception
+    //    else if (i_eret)        br_target = epc;
+    //    //conditional branch instructions
+    //    //else if (((i_bgez|i_bgezal)&(~rs_less_than_0))|((i_bltz|i_bltzal)&rs_less_than_0)
+    //    //    |(i_blez&(rs_less_than_0|rs_equal_0))|(i_beq&rs_rt_equal)|(i_bne&(~rs_rt_equal))
+    //    //     |(i_bgtz&(~rs_less_than_0 & ~ rs_equal_0)));
+    //    //                        br_target = bpc;
+    //    //normal target
+    //    else                    br_target = ID_PC + 4;
+    //end
 
 
     //These signals are used for the branch predictor. 
@@ -631,24 +640,25 @@ module control_unit(
     //This signal with ID_PC together, can let the branch predictor know that
     //an address holds a branch instruction, then the BP can assign a slot for
     //that address.
-    assign is_branch =(i_j|i_jal|i_jr|i_jalr|i_bgez|i_bgezal|i_bltz|i_bltzal
-                |i_blez|i_beq|i_bne|i_eret)&~ban_ID;
+    //assign is_branch =(i_j|i_jal|i_jr|i_jalr|i_bgez|i_bgezal|i_bltz|i_bltzal
+    //            |i_blez|i_bgtz|i_beq|i_bne|i_eret)&~ban_ID;
     //do_branch is HIGH if a branch takes place. 
     //This signal together with is_branch and BP_miss, can let the branch predictor 
     //know when to update the history table. 
-    assign do_branch = (i_j|i_jal|i_jr|i_jalr|((i_bgez|i_bgezal)&(~rs_less_than_0))
-                |((i_bltz|i_bltzal)&rs_less_than_0)|(i_blez&(rs_less_than_0|rs_equal_0))
-                |(i_beq&rs_rt_equal)|(i_bne&(~rs_rt_equal))|i_eret)&~ban_ID;
+    //assign do_branch = (i_j|i_jal|i_jr|i_jalr|((i_bgez|i_bgezal)&(~rs_less_than_0))
+    //            |((i_bltz|i_bltzal)&rs_less_than_0)|(i_blez&(rs_less_than_0|rs_equal_0))
+    //            |(i_beq&rs_rt_equal)|(i_bne&(~rs_rt_equal))|i_eret)&~ban_ID;
 
     //If there's a branch, compare the branch target with the current PC, if the two
     //are not equal, then there's a BP miss, pre-fetched instruction should be 
-    //canceled.  
-    assign BP_miss = is_branch? (PC != br_target) : 1'b0;
+    //canceled.
+    //bp_miss生成向后推，在exe级实现  
+    //assign BP_miss = is_branch? (PC != br_target) : 1'b0;
 
     //Some of the branch instructions such as j and jal have fixed target, while
     //some branch instructions such as jr and jalr have  variable target. 
     //The branch predictor must understand these conditions when making predictions. 
-    assign V_target = i_jr | i_jalr | i_eret;
+    //assign V_target = i_jr | i_jalr | i_eret;
 
 
     //------------------------Interrupt and Exceptions---------------------------
@@ -738,7 +748,7 @@ module control_unit(
             2'b00  :   next_PC = BP_target;
             2'b01  :   next_PC = CP0_Reg[2];
             2'b10  :   next_PC = SMC_nPC;
-            2'b11  :   next_PC =br_target;            
+            2'b11  :   next_PC = br_target;            
         endcase
     end
 
@@ -841,9 +851,31 @@ module control_unit(
                 ban_MEM = 0;
             end
         end
-        else if (exc_ID | ID_SMC) begin
+        /*为了提高时钟频率，将分支预测失败的检测放在EXE级的电路中，当EXE级电路检测到分支
+        预测失败时，ID级和IF级均已加载错误的指令，因此将他们废弃，并将下一跳设置为正确的
+        跳转目标。这样做大幅提高了CPU的时钟频率，但是在分支预测失败时引入了额外一周期的代
+        价，因为ID级的指令也要被撤销。
+        */
+        else if (exc_ID | ID_SMC |BP_miss) begin
+            //If there's a branch prediction miss, handle it first
+            if (BP_miss) begin
+                //no need to update the STATUS register
+                update_STATUS_exc =0;
+                //no need to update the cause register
+                update_CAUSE_exc =0;             
+                //no need to update the epc register
+                update_EPC_exc =0;
+                //select the next pc as correct branch target
+                nPC_sel = 2'b11;
+                //generate cancel signals
+
+                ban_IF =1;
+                ban_ID_EXC =1;
+                ban_EXE = 0;
+                ban_MEM = 0;                   
+            end
             //self-modify code has higher priority as mentioned above
-            if (ID_SMC) begin
+            else if (ID_SMC) begin
                 //no need to update the STATUS register
                 update_STATUS_exc =0;
                 //no need to update the cause register
@@ -916,26 +948,16 @@ module control_unit(
                 由于EXC只和当前IF级有关，因此，由于ID级产生的IF和ID级暂停不会修改IF级的内
                 容，EXC也不会因为多周期和RAW被错过。
         */
-        else if (exc_IF | IF_SMC | BP_miss)begin
-            //If there's a branch prediction miss, handle it first
-            if (BP_miss) begin
-                //no need to update the STATUS register
-                update_STATUS_exc =0;
-                //no need to update the cause register
-                update_CAUSE_exc =0;             
-                //no need to update the epc register
-                update_EPC_exc =0;
-                //select the next pc as correct branch target
-                nPC_sel = 2'b11;
-                //generate cancel signals
-                //only cancel IF stage
-                ban_IF =1;
-                ban_ID_EXC =0;
-                ban_EXE = 0;
-                ban_MEM = 0;                   
-            end
+        /*
+        经过综合和时序分析发现，为分支计算正确的目标地址并检查是否预测失败需要花费大量的
+        时间，将分支预测检查放在ID级会使整个CPU的频率大幅下降，因此我将对于分支预测的检查
+        向后推入EXE级，这样对于分支预测的处理将放在对ID级异常进行处理的块内。这样做提高了
+        CPU的时钟频率，但是会使分支预测失败带来的惩罚增加，当分支预测失败时需要同时废弃IF
+        和ID级。
+        */
+        else if (exc_IF | IF_SMC )begin
             //otherwise, if there's a SMC in IF stage
-            else if (IF_SMC) begin
+            if (IF_SMC) begin
                 //no need to update the STATUS register
                 update_STATUS_exc =0;
                 //no need to update the cause register
