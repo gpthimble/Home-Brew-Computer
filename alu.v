@@ -47,6 +47,7 @@ module alu(
     //HI is reserved for multiply operation.    
     //output reg [31:0]  HI;
 
+
     //--------------------------    Module implementation  -------------------------
     wire [31:0] r_sub_add,r_clo_clz,r_shift;
     //reserved for divide and multiply.

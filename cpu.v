@@ -12,9 +12,26 @@ module cpu (
     int_num,
     //clock and synchronized clear
     clr, clk,
-    //for debugging
 
+    //for debugging
+    PC, next_PC_o,instruction_o,I_cache_ready,
+    ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
+    da,db,imm,
+    E_PC,E_AluOut,
+    M_PC,D_cache_dout_o,D_cache_ready,
+    W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
+    
 );
+//for debugging
+output [31:0] PC,ID_PC,E_PC,M_PC, next_PC_o,instruction_o,D_cache_dout_o,W_RegDate_in
+        ,E_AluOut,da,db,imm;
+output I_cache_ready,BP_miss,stall_IF_ID,W_canceled,W_RegWrite,
+        W_M2Reg,D_cache_ready,CPU_stall,ban_IF,ban_ID,ban_EXE,ban_MEM;
+output [4:0] W_TargetReg;
+assign next_PC_o = next_PC_in;
+assign instruction_o = I_cache_out;
+
+assign D_cache_dout_o =M_MemOut;
 //######################## Interface description ###########################
 //------------------------ interface to the bus -----------------------------
     //32-bit address BUS
@@ -87,7 +104,7 @@ module cpu (
     wire [31:0] da,db,imm;
     wire [4:0] TargetReg;
     //control output to next stage
-    wire RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign;
+    wire RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign;
     wire StoreMask,LoadMask,B_HW,LoadSign;
     wire [3:0] AluFunc;
     wire [1:0] ExeSelect;
@@ -118,7 +135,7 @@ module cpu (
     reg E_canceled;
     reg [31:0] E_da,E_db,E_imm, E_PC;
     reg [4:0] E_TargetReg;
-    reg E_RegWrite,E_M2Reg,E_MemReq,E_MemWrite,E_AluImm,E_ShiftImm,E_link,E_slt,E_sign;
+    reg E_RegWrite,E_M2Reg,E_MemReq,E_MemWrite,E_AluImm,E_ShiftImm,E_link,E_slt,E_sign,E_slt_sign ;
     reg E_StoreMask,E_LoadMask,E_B_HW,E_LoadSign;
     reg [3:0] E_AluFunc;
     reg [1:0] E_ExeSelect;
@@ -197,7 +214,7 @@ regfile RegFile_0 (rs,rt,qa,qb,
 control_unit CU_0 (
     instruction,ID_canceled, rs,rt, qa,qb,
     da,db,imm,TargetReg,
-    RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,
+    RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign,
     StoreMask,LoadMask,B_HW,LoadSign,
     AluFunc,ExeSelect,
     M_TargetReg,M_M2Reg,M_RegWrite, E_TargetReg_out, E_M2Reg,E_RegWrite,
@@ -235,6 +252,7 @@ assign int_ack = int_rec & ~CPU_stall;
             E_link     <=  1'b0;
             E_slt      <=  1'b0;
             E_sign     <=  1'b0;
+            E_slt_sign <=  1'b0;
             E_StoreMask<=  1'b0;
             E_LoadMask <=  1'b0;
             E_B_HW     <=  1'b0;
@@ -276,6 +294,7 @@ assign int_ack = int_rec & ~CPU_stall;
             E_link     <= link     ;
             E_slt      <= slt      ;
             E_sign     <= sign     ;
+            E_slt_sign <= slt_sign ;
             E_StoreMask<= StoreMask;
             E_LoadMask <= LoadMask ;
             E_B_HW     <= B_HW     ;
@@ -355,7 +374,7 @@ assign BP_miss = is_branch ? (ID_PC != br_target) : 1'b0;
 
 
 wire [31:0] alu_in_A, alu_in_B, alu_result;
-assign alu_in_A = E_ShiftImm ? E_imm : E_da;
+assign alu_in_A = E_ShiftImm ? {27'b0,E_imm[10:6]} : E_da;
 assign alu_in_B = E_AluImm ? E_imm : E_db;
 wire AluOverflow;
 
@@ -372,9 +391,9 @@ always @(*) begin
     //for jump & link instructions
     if (E_link) E_AluOut = E_PC +4;
     //for set less than unsigned
-    else if(~E_sign & E_slt) E_AluOut = {31'b0,comp_u_result};
+    else if(~E_slt_sign & E_slt) E_AluOut = {31'b0,comp_u_result};
     //for set less than signed
-    else if(E_sign & E_slt) E_AluOut = {31'b0,comp_s_result};
+    else if(E_slt_sign & E_slt) E_AluOut = {31'b0,comp_s_result};
     //for other instructions
     else E_AluOut =alu_result;
 end
@@ -431,7 +450,7 @@ end
 //instantiate D cache
 wire [31:0] D_cache_din,D_cache_dout;
 assign M_MemAddr = M_AluOut;
-cache D_cache (CPU_stall,M_AluOut,D_cache_din,M_MemReq & ~M_canceled,M_MemWrite,1'b0,
+cache D_cache (CPU_stall,E_AluOut,D_cache_din,E_MemReq & ~(E_canceled|ban_EXE),E_MemWrite,1'b0,
                 D_cache_dout,D_cache_ready,
                 ,
                 BUS_addr,BUS_data,BUS_req_D,BUS_RW,BUS_grant_D,BUS_ready,
@@ -497,7 +516,7 @@ assign LoadMask_ext = M_B_HW ?
 wire [31:0] LoadMask_out;
 assign LoadMask_out = M_LoadSign ? LoadMask_ext : LoadMask_no_ext;
 //connect masked result to the cache
-assign D_cache_din = M_StoreMask ? StoreMask_in : M_db;
+assign D_cache_din = M_StoreMask ? StoreMask_in : E_db;
 //connect masked result to the next stage
 assign M_MemOut = LoadMask_out;
 

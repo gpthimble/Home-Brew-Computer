@@ -15,7 +15,7 @@ module control_unit(
     da,db,imm,TargetReg, 
     
     //output control signals for next stage
-    RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,
+    RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign,
         //for different load/store instructions
     StoreMask,LoadMask,B_HW,LoadSign,
         //for ALU
@@ -113,7 +113,7 @@ module control_unit(
     //that needs immediate operand. It is also used in EXE stage for mask the overflow
     //signal. 
     output sign;
-
+    output slt_sign;
     //These signals are used for load/store byte and half word instructions
     output StoreMask,LoadMask,B_HW,LoadSign;
 
@@ -329,6 +329,8 @@ module control_unit(
     //comparator in EXE stage is active, and the output of EXE stage will be selected 
     //as the output of these comparators.
     assign slt =  i_slt|i_sltu|i_slti|i_sltiu;
+
+    assign slt_sign = i_slt | i_slti;
 
     //Sign indicates that weather the immediate operand is sign or unsigned. It is used
     //in ID stage for sign extension of the immediate operand, and in EXE stage for 
@@ -597,7 +599,7 @@ module control_unit(
     //wire [31:0] jpc = {ID_PC[31:28],instruction[25:0],2'b00};
 //
     //Branch offset for conditional branch instructions. 
-    wire [31:0] br_offset = {imm[29:0],2'b00};
+    wire [31:0] br_offset = imm;
     //Target address for conditional branch instructions. 
     assign bpc = br_offset + ID_PC;
 

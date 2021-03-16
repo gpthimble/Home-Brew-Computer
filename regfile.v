@@ -43,14 +43,34 @@ module regfile(
     input        w_en,clk,clr;
 
     //32-bit data output for read agent A and B.
-    output[31:0] data_out_a,data_out_b;
+    output reg [31:0] data_out_a,data_out_b;
 
     //--------------------------    Module implementation  -------------------------
     reg   [31:0] register [1:31];
 
     //Register 0 is always 0. Implemented by compare the address with zero.
-    assign data_out_a = (r_number_a==0) ? 0 : register[r_number_a];
-    assign data_out_b = (r_number_b==0) ? 0 : register[r_number_b];
+    always @ (*)
+    begin
+      if(r_number_a==0)
+        data_out_a = 32'b0;
+      //data forward for WB stage
+      else if (r_number_a == w_number & w_en) 
+        data_out_a = data_in;
+      else
+        data_out_a =  register[r_number_a];
+    end 
+
+    always @(*)
+    begin
+      if(r_number_b==0)
+        data_out_b = 32'b0;
+      //data forward for WB stage
+      else if (r_number_b == w_number & w_en) 
+        data_out_b = data_in;
+      else
+        data_out_b =  register[r_number_b];
+    end
+
 
     always @(posedge clk)
     begin

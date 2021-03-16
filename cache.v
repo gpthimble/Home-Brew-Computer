@@ -187,7 +187,7 @@ begin
         begin
             addr_reg <= 0;
             data_reg <= 0;  
-            CPU_req_reg <= 0;
+            CPU_req_reg <= CPU_req;
             CPU_RW_reg  <= 0;
             CPU_clr_reg <= 0;
         end

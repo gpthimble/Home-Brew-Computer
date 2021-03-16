@@ -54,14 +54,14 @@ initial
 begin
     address[0]= 0 ;
     //cache sync
-    address[1]= 0 ;
+    address[1]= 1 ;
    
-    address[2]= 0 ; 
+    address[2]= 2 ; 
     //cache miss
-    address[3]= 4 ;
+    address[3]= 3 ;
     //cache hit
     address[4]= 4 ;
-    address[5]= 16 ; 
+    address[5]= 5 ; 
     address[6]= 0 ; 
     //cache sync
     address[7]= 4 ; 
@@ -111,12 +111,12 @@ reg [7:0] rw;
 initial
 begin
     rw[0]= 0 ;
-    rw[1]= 1 ;
+    rw[1]= 0 ;
     rw[2]= 0 ;
-    rw[3]= 1 ;
+    rw[3]= 0 ;
     rw[4]= 0 ;
-    rw[5]= 1 ;
-    rw[6]= 1 ;
+    rw[5]= 0 ;
+    rw[6]= 0 ;
     rw[7]= 0 ;
 end
 
