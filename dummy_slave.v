@@ -27,7 +27,7 @@ module dummy_slave(
 
 //--------------------------    Module implementation  -------------------------
     //dummy memory
-    (* ram_init_file = "ram.mif" *) reg [31:0] mem [0:32-1];
+    (* ram_init_file = "test.mif" *) reg [31:0] mem [0:300];
 
     //internal state machine
     reg [ 2:0] state;
@@ -42,7 +42,7 @@ module dummy_slave(
     initial 
     begin
         entry_start=32'b0;
-        entry_end  =32'b11111;
+        entry_end  =32'b11111111;
         state      = 0;
         //ready signal is Z when idle, ready line should have a tri0 
         //pulldown resistance. because there're other devices on the
