@@ -491,19 +491,10 @@ always @(*) begin
         2'b11: shift =24;
     endcase
 end
-//this register is used for holding the value read out of the cache for SB/SHW
-reg [31:0] D_cache_dout_R;
-always @(posedge clk) begin
-    if (clr) begin
-        D_cache_dout_R <= 32'b0;
-    end
-    else if (~CPU_stall) begin
-        D_cache_dout_R <= D_cache_dout;
-    end
-end
+
 //shift and mask mechanism for store byte and half word instructions
 wire [31:0] StoreMask_in;
-assign StoreMask_in = (D_cache_dout_R & ~mask)|( (M_db<<shift) & mask);
+assign StoreMask_in = (D_cache_dout & ~mask)|( (E_db<<shift) & mask);
 //shift and mask mechanism for load byte and half word instructions
 wire [31:0] LoadMask_no_ext;
 assign LoadMask_no_ext = (D_cache_dout & mask) >> shift;
@@ -516,9 +507,9 @@ assign LoadMask_ext = M_B_HW ?
 wire [31:0] LoadMask_out;
 assign LoadMask_out = M_LoadSign ? LoadMask_ext : LoadMask_no_ext;
 //connect masked result to the cache
-assign D_cache_din = M_StoreMask ? StoreMask_in : E_db;
+assign D_cache_din = E_StoreMask ? StoreMask_in : E_db;
 //connect masked result to the next stage
-assign M_MemOut = LoadMask_out;
+assign M_MemOut = M_LoadMask?LoadMask_out : D_cache_dout;
 
 //for MEM stage exceptions
 //Misaligned exceptions
