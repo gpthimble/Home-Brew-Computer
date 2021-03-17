@@ -269,7 +269,7 @@ module control_unit(
         if (clr)
             upc <=0;
         else begin
-            if (ins_done) upc <= 0;
+            if (ins_done &~Stall_RAW & ~CPU_stall) upc <= 0;
             //If there's a read after write hazard, the ID and IF stage must be wait
             //for one clock cycle, so does the update of upc. 
             //Use a separate stall signal from Stall_ID_IF is necessary, because 
