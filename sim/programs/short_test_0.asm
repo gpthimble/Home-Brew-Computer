@@ -73,13 +73,6 @@ addu $30,$0, 4627
 addu $31,$0, 4627
 bne $30,$31, A17
 
-;test load/store
-
-
-
-
-;test conditional jump
-
 
 
 
