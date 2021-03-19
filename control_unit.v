@@ -19,12 +19,12 @@ module control_unit(
         //for different load/store instructions
     StoreMask,LoadMask,B_HW,LoadSign,
         //for ALU
-    AluFunc,ExeSelect,
+    AluFunc,ExeSelect,AllowOverflow ,
     //signals for data forward
     M_TargetReg,M_m2reg,M_RegWrite,E_TargetReg,E_m2reg,E_RegWrite,
     E_AluOut,M_AluOut,M_MemOut,
     //signal for detecting self-modify code
-    M_MemAddr, M_MemWrite,
+    M_MemAddr, M_MemWrite,ID_canceled,EXE_canceled,Mem_canceled,
     //control signals for pipeline control
     I_cache_R, D_cache_R,
     CPU_stall, Stall_IF_ID, 
@@ -94,7 +94,7 @@ module control_unit(
 
     //-------------------------For self-modify code------------------------------
     input [31:0] M_MemAddr;
-    input M_MemWrite;
+    input M_MemWrite,ID_canceled,EXE_canceled,Mem_canceled;
 
     //-------------------------Control Signals to next stage---------------------
     //These signals is the decoded signal for next stage driving different part
@@ -136,7 +136,7 @@ module control_unit(
     //               |0010  CLZ  | 0110  OR   | 1010  SRL  | 1110  DIV  |
     //               |0011  CLO  | 0111  NOR  | 1011  SRA  | 1111  DIVU |
     output reg [3:0] AluFunc;
-
+    output AllowOverflow ;
     //------------------for pipeline control--------------------------------------
     //next PC is calculated within the CU
     output reg [31:0] next_PC;
@@ -361,7 +361,7 @@ module control_unit(
                     |i_lui|i_lb|i_lh|i_lw|i_lbu|i_lhu;
     assign TargetReg = TargetRegSelect ? rt : rd;
 
-
+    wire AllowOverflow = i_add | i_addi | i_sub;
     //alu function code generate
     //AluFunc   : Alu function code when the instruction needs to use the ALU
     //               |Unit 00    | Unit 01    | Unit 10    | Unit 11    |
@@ -503,7 +503,8 @@ module control_unit(
                 end
             end
     end
-    wire [31:0] CP0_reg_out = CP0_Reg[rd];
+    wire [31:0] CP0_reg_out;
+    assign CP0_reg_out = CP0_Reg[rd];
 
     //implement of mfc0 and mtc0
     //mtc0 is done in ID stage itself, The output of register file feed into 
@@ -534,7 +535,7 @@ module control_unit(
     //as one of the operand (rs or rt) of the current instruction, Stall_RAW is HIGH,
     //The instruction fetch is paused for one clock cycle. 
     //The update of upc is also stopped. 
-    wire Stall_RAW = E_RegWrite & E_m2reg & (E_TargetReg!=0) 
+    wire Stall_RAW = E_RegWrite & E_m2reg & (E_TargetReg!=0) & ~EXE_canceled
                         &(need_rs & (E_TargetReg==rs)| need_rt & (E_TargetReg==rt));
     
     //We have two ban signal at ID stage to avoid logic loop, ban_ID_RAW and ban_ID_EXC.
@@ -550,19 +551,19 @@ module control_unit(
         //case 1：current instruction's first operand is the same as the target register 
         //of the EXE stage, and the EXE stage is not a load instruction, the pipeline
         //doesn't need to stop. 
-        if (need_rs & E_RegWrite & (E_TargetReg!=0) & (E_TargetReg == rs) & ~E_m2reg)
+        if (need_rs & E_RegWrite & (E_TargetReg!=0) & (E_TargetReg == rs) & ~E_m2reg & ~EXE_canceled)
             regA = E_AluOut;
         //case 2: current instruction's first operand is the same as the target register
         //of the MEM stage, and the MEM stage is not a load instruction, the pipeline
         //doesn't need to stop. 
-        else if (need_rs & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rs) & ~M_m2reg)
+        else if (need_rs & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rs) & ~M_m2reg & ~Mem_canceled)
             regA = M_AluOut;
         //case 3: current instruction's first operand is the same as the target register
         //of the last instruction, and the last instruction is a load instruction.
         //As mentioned above, the IF and ID stage have been stopped for one clock cycle,
         //after the stop, the following if statement can become true, and the the memory
         //read is done, the data can be cast on the current instruction in ID stage. 
-        else if (need_rs & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rs) & M_m2reg)
+        else if (need_rs & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rs) & M_m2reg & ~Mem_canceled)
             regA = M_MemOut;
         //case 0: default situation, there's no data forward. 
         else regA = qa;
@@ -571,11 +572,11 @@ module control_unit(
     //data forward for rt
     always @(*) begin
         //Since it is similar to rs, the comments are omitted here. 
-        if (need_rt & E_RegWrite & (E_TargetReg !=0) & (E_TargetReg == rt) & ~E_m2reg)
+        if (need_rt & E_RegWrite & (E_TargetReg !=0) & (E_TargetReg == rt) & ~E_m2reg & ~EXE_canceled)
             regB =E_AluOut;
-        else if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & ~M_m2reg)
+        else if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & ~M_m2reg & ~Mem_canceled)
             regB = M_AluOut;
-        else if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & M_m2reg)
+        else if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & M_m2reg & ~Mem_canceled)
             regB =M_MemOut;
         else regB = qb;
     end
@@ -717,8 +718,8 @@ module control_unit(
     //self modify code  has an impact on IF ID and EXE stage. 
     wire IF_SMC, ID_SMC, EXE_SMC;
     assign IF_SMC = (PC == M_MemAddr) & M_MemWrite;
-    assign ID_SMC = (ID_PC == M_MemAddr) & M_MemWrite;
-    assign EXE_SMC = (EXE_PC == M_MemAddr) & M_MemWrite;
+    assign ID_SMC = (ID_PC == M_MemAddr) & M_MemWrite & ~ID_canceled;
+    assign EXE_SMC = (EXE_PC == M_MemAddr) & M_MemWrite & ~EXE_canceled;
 
     //------------------------processing EXC br_miss SMC and INT----------------------
     //signals for update the STATUS register (CP1)
