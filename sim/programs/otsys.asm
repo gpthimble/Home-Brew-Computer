@@ -631,9 +631,9 @@
     syscall => 0b000000 @ 0b00000000000000000000 @ 0b001100
     syscall {code: u20} => 0b000000 @ code`20 @ 0b001100
     ;mtc0 rt, rd; Move to Coprocessor 0
-    mtc0 {rt:register}, {rd:register} => 0b010000 @ 0b00100 @ rt`5 @ rd`5 @ 0b00000000 @ 0b000
+    mtc0 {rt:register}, {rd:u5} => 0b010000 @ 0b00100 @ rt`5 @ rd`5 @ 0b00000000 @ 0b000
     ;mfc0 rt, rd; Move from Coprocessor 0
-    mfc0 {rt:register}, {rd:register} => 0b010000 @ 0b00000 @ rt`5 @ rd`5 @ 0b00000000 @ 0b000
+    mfc0 {rt:register}, {rd:u5} => 0b010000 @ 0b00000 @ rt`5 @ rd`5 @ 0b00000000 @ 0b000
     ;eret; Eception Return
     eret => 0b010000 @ 0b1 @ 0b0000000000000000000 @ 0b011000
     ;bgtz if rs > 0 then branch
@@ -648,4 +648,10 @@
     bgezal {rs:register}, {offset: s16} => 0b000001 @ rs`5 @ 0b10001 @ offset`16   
     ;bgez; branch on greater than or equal to zero
     bgez {rs:register}, {offset: s16} => 0b000001 @ rs`5 @ 0b00001 @ offset`16   
+	;add ;this instruction will cause overflow
+	add {rd:register}, {rs:register}, {rt:register} => 0b000000 @rs`5 @ rt`5 @ rd`5 @ 0b00000 @ 0b100000
+	;sub ;this instruction will cause overflow
+	sub {rd:register}, {rs:register}, {rt:register} => 0b000000 @rs`5 @ rt`5 @ rd`5 @ 0b00000 @ 0b100010
+	;addi ;add imediate; this instruction will cause overflow
+	addi {rt:register}, {rs:register}, {imm: s16} => 0b001000 @ rs`5 @ rt`5 @ imm`16
 }
