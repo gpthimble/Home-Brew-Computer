@@ -108,6 +108,7 @@ assign D_cache_dout_o =M_MemOut;
     wire StoreMask,LoadMask,B_HW,LoadSign;
     wire [3:0] AluFunc;
     wire [1:0] ExeSelect;
+    wire AllowOverflow;
     //stall signal generated from CU
     wire CPU_stall;
     //stall signal for IF and ID stage generated from CU
@@ -140,6 +141,7 @@ assign D_cache_dout_o =M_MemOut;
     reg [3:0] E_AluFunc;
     reg [1:0] E_ExeSelect;
     reg [31:0] E_ins, E_epc,E_bpc,E_no_br_pc;
+    reg E_AllowOverflow;
 
     reg E_i_j,E_i_jal,E_i_jr,E_i_jalr,E_i_eret,E_i_bgez,E_i_bgezal,
             E_i_bltz,E_i_bltzal,E_i_blez,E_i_bgtz,E_i_beq,E_i_bne;
@@ -179,6 +181,19 @@ assign D_cache_dout_o =M_MemOut;
     //makes the CPU run from address zero when clr. 
     wire [31:0] next_PC_in = clr ? 32'b0 : next_PC;
 
+    wire  IF_misaligned = PC[0] | PC[1];
+
+    assign exc_IF = IF_misaligned ;
+
+    always @(*) begin
+        if (IF_misaligned) begin
+            IF_cause = 3'b001;
+        end
+        else 
+            IF_cause = 3'b000;
+    end
+
+
     //Instantiate the instruction cache
     cache I_cache(stall_IF, next_PC_in, 32'b0, 1'b1, 1'b0, 1'b0,
                     I_cache_out, I_cache_ready,
@@ -216,10 +231,10 @@ control_unit CU_0 (
     da,db,imm,TargetReg,
     RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign,
     StoreMask,LoadMask,B_HW,LoadSign,
-    AluFunc,ExeSelect,
+    AluFunc,ExeSelect,AllowOverflow,
     M_TargetReg,M_M2Reg,M_RegWrite, E_TargetReg_out, E_M2Reg,E_RegWrite,
     E_AluOut, M_AluOut, M_MemOut ,
-    M_MemAddr, M_MemWrite &~M_canceled,
+    M_MemAddr, M_MemWrite &~M_canceled, ID_canceled, EXE_canceled, Mem_canceled,
     I_cache_ready,D_cache_ready,
     CPU_stall,stall_IF_ID,
     BP_miss,epc,BP_target,br_target,bpc,no_br_pc,
@@ -258,6 +273,7 @@ assign int_ack = int_rec & ~CPU_stall;
             E_B_HW     <=  1'b0;
             E_LoadSign <=  1'b0;
             E_AluFunc  <=  4'b0;
+            E_AllowOverflow <= 1'b0;
 
             E_ins      <= 32'b0;
             E_epc      <= 32'b0;
@@ -300,6 +316,7 @@ assign int_ack = int_rec & ~CPU_stall;
             E_B_HW     <= B_HW     ;
             E_LoadSign <= LoadSign ;
             E_AluFunc  <= AluFunc  ;
+            E_AllowOverflow <= AllowOverflow;
 
             E_ins      <=  instruction;
             E_epc      <=  epc;
@@ -399,7 +416,7 @@ always @(*) begin
 end
 
 //exe stage overflow exception
-assign exc_EXE = E_sign & ~E_canceled & ~E_slt & ~E_link & AluOverflow;
+assign exc_EXE =  ~E_canceled & E_AllowOverflow & AluOverflow;
 //EXE_cause = 001 when alu has overflowed
 always @(*) begin
     if (exc_EXE) begin
@@ -513,11 +530,12 @@ assign M_MemOut = M_LoadMask?LoadMask_out : D_cache_dout;
 
 //for MEM stage exceptions
 //Misaligned exceptions
-wire M_misaligned = (M_LoadMask | M_StoreMask) & M_B_HW & offset[0];
+wire M_misaligned = (M_LoadMask | M_StoreMask) & M_B_HW & offset[0] |
+                    ~(M_LoadMask | M_StoreMask) & (offset[1] | offset[0]);
 //add other exceptions here
 //...
 //signal the exception to CU. 
-assign exc_MEM = M_misaligned & ~M_canceled;
+assign exc_MEM = M_misaligned & ~M_canceled & M_MemReq;
 //set the cause of exception
 always @(*) begin
     if (M_misaligned) begin
