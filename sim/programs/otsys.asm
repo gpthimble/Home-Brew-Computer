@@ -46,7 +46,7 @@
     la {rt:register}, {offset: s16} => ;addiu rt, $0, offset`16
 									0b001001@0b00000@rt`5@offset`16
 
-    la {rt:register}, {offset: s32} =>	{assert((offset < -32768)| (offset > 32767) ),
+    la {rt:register}, {offset: i32} =>	{assert((offset < -32768)| (offset > 32767) ),
 									;lui rt, offset[31:16]
 									0b001111@0b00000@rt`5@offset[31:16]@
 									;ori rt, rt, offset[15:0]
@@ -546,8 +546,8 @@
     							0b100100 @ base`5 @ rt`5 @ offset`16 @
     							;lbu $1, offset+1#(base)
     							0b100100 @ base`5 @ 0b00001 @ offset1`16 @
-    							;sll $1, $1, 8
-    							0b000000 @ 0b00000 @ 0b00001 @ 0b00001 @ 0b01000 @ 0b000000 @
+    							;sll rt, rt, 8
+    							0b000000 @ 0b00000 @ rt`5 @ rt`5 @ 0b01000 @ 0b000000 @
     							;or rt, rt, $1
     							0b000000 @ rt`5 @ 0b00001 @ rt`5 @ 0b00000 @ 0b100101}
 
@@ -559,51 +559,51 @@
     							0b100100 @ base`5 @ rt`5 @ offset`16 @
     							;lbu $1, offset+1#(base)
     							0b100100 @ base`5 @ 0b00001 @ offset1`16 @
-    							;sll $1, $1, 8
-    							0b000000 @ 0b00000 @ 0b00001 @ 0b00001 @ 0b01000 @ 0b000000 @
+    							;sll rt, rt, 8
+    							0b000000 @ 0b00000 @ rt`5 @ rt`5 @ 0b01000 @ 0b000000 @
     							;or rt, rt, $1
     							0b000000 @ rt`5 @ 0b00001 @ rt`5 @ 0b00000 @ 0b100101 @
     							;lbu $1, offset+2#(base)
     							0b100100 @ base`5 @ 0b00001 @ offset2`16 @
-    							;sll $1, $1, 16
-    							0b000000 @ 0b00000 @ 0b00001 @ 0b00001 @ 0b10000 @ 0b000000 @
+    							;sll rt, rt, 8
+    							0b000000 @ 0b00000 @ rt`5 @ rt`5 @ 0b01000 @ 0b000000 @
     							;or rt, rt, $1
     							0b000000 @ rt`5 @ 0b00001 @ rt`5 @ 0b00000 @ 0b100101 @
     							;lbu $1, offset+3#(base)
     							0b100100 @ base`5 @ 0b00001 @ offset3`16 @
-    							;sll $1, $1,24
-    							0b000000 @ 0b00000 @ 0b00001 @ 0b00001 @ 0b11000 @ 0b000000 @
+    							;sll rt, rt, 8
+    							0b000000 @ 0b00000 @ rt`5 @ rt`5 @ 0b01000 @ 0b000000 @
     							;or rt, rt, $1
     							0b000000 @ rt`5 @ 0b00001 @ rt`5 @ 0b00000 @ 0b100101
     														}
     ;unaligned store half-word
     ush {rt:register},{offset: s16}#({base:register}) =>{ offset1=offset+1
-    							;sb rt, offset#(base)
-    							0b101000 @ base`5 @ rt`5 @ offset`16 @
+    							;sb rt, offset1#(base)
+    							0b101000 @ base`5 @ rt`5 @ offset1`16 @
     							;srl $1, rt, 8
     							0b000000 @ 0b00000 @ rt`5 @ 0b00001 @ 0b01000 @ 0b000010 @
-    							;sb $1, offset+1(base)
-    							0b101000 @ base`5 @ 0b00001 @ offset1`16
+    							;sb $1, offset(base)
+    							0b101000 @ base`5 @ 0b00001 @ offset`16
     							}
 
     ;unaligned store word							
     usw {rt:register},{offset: s16}#({base:register}) =>{ offset1=offset+1
                                 offset2=offset+2
                                 offset3=offset+3
-    							;sb rt, offset#(base)
-                                0b101000 @ base`5 @ rt`5 @ offset`16 @
+    							;sb rt, offset3#(base)
+                                0b101000 @ base`5 @ rt`5 @ offset3`16 @
     							;srl $1, rt, 8
                                 0b000000 @ 0b00000 @ rt`5 @ 0b00001 @ 0b01000 @ 0b000010 @
-    							;sb $1, offset+1(base)
-                                0b101000 @ base`5 @ 0b00001 @ offset1`16@	
-    							;srl $1, $1, 8
-                                0b000000 @ 0b00000 @ 0b00001 @ 0b00001 @ 0b01000 @ 0b000010 @
     							;sb $1, offset+2(base)
                                 0b101000 @ base`5 @ 0b00001 @ offset2`16@	
     							;srl $1, $1, 8
                                 0b000000 @ 0b00000 @ 0b00001 @ 0b00001 @ 0b01000 @ 0b000010 @
-    							;sb $1, offset+3(base)
-                                0b101000 @ base`5 @ 0b00001 @ offset3`16   }
+    							;sb $1, offset+1(base)
+                                0b101000 @ base`5 @ 0b00001 @ offset1`16@	
+    							;srl $1, $1, 8
+                                0b000000 @ 0b00000 @ 0b00001 @ 0b00001 @ 0b01000 @ 0b000010 @
+    							;sb $1, offset(base)
+                                0b101000 @ base`5 @ 0b00001 @ offset`16   }
 
 
 }
