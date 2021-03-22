@@ -17,7 +17,7 @@ module control_unit(
     //output control signals for next stage
     RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign,
         //for different load/store instructions
-    StoreMask,LoadMask,B_HW,LoadSign,
+    StoreMask,LoadMask,B_HW,LoadSign, NotAlign,
         //for ALU
     AluFunc,ExeSelect,AllowOverflow ,
     //signals for data forward
@@ -115,7 +115,7 @@ module control_unit(
     output sign;
     output slt_sign;
     //These signals are used for load/store byte and half word instructions
-    output StoreMask,LoadMask,B_HW,LoadSign;
+    output StoreMask,LoadMask,B_HW,LoadSign,NotAlign;
 
     //ExeSelect : select the output of EXE stage 这个向量目前需要修改。
     //  00  :  pc8;
@@ -342,6 +342,7 @@ module control_unit(
     //StoreMask select the masked value as the input of memory. This signal is active
     //at the second cycle of store byte and store half word. 
     assign StoreMask = (i_sb & upc==1) | (i_sh & upc==1);
+    assign NotAlign =  (i_sh & upc==0) | (i_sb & upc==0);
 
     //LoadMask select the masked value as the output of MEM stage. This signal is active
     //for Load byte and Load half word instruction.

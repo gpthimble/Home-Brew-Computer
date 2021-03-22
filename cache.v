@@ -161,8 +161,8 @@ module cache
 //--------------------------    Module implementation  -------------------------
 
 //This pair of parameters describe the range of not cached memory.
-parameter no_cache_start=0;
-parameter no_cache_end =0;
+parameter no_cache_start=32'hFFFFFFF8;
+parameter no_cache_end =32'hFFFFFFFC;
 
 //Number of Lines in each group.
 localparam cache_lines = 2<< (INDEX -1);

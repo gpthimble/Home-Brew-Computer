@@ -105,7 +105,7 @@ assign D_cache_dout_o =M_MemOut;
     wire [4:0] TargetReg;
     //control output to next stage
     wire RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign;
-    wire StoreMask,LoadMask,B_HW,LoadSign;
+    wire StoreMask,LoadMask,B_HW,LoadSign,NotAlign;
     wire [3:0] AluFunc;
     wire [1:0] ExeSelect;
     wire AllowOverflow;
@@ -136,7 +136,7 @@ assign D_cache_dout_o =M_MemOut;
     reg E_canceled;
     reg [31:0] E_da,E_db,E_imm, E_PC;
     reg [4:0] E_TargetReg;
-    reg E_RegWrite,E_M2Reg,E_MemReq,E_MemWrite,E_AluImm,E_ShiftImm,E_link,E_slt,E_sign,E_slt_sign ;
+    reg E_RegWrite,E_M2Reg,E_MemReq,E_MemWrite,E_AluImm,E_ShiftImm,E_link,E_slt,E_sign,E_slt_sign ,E_NotAlign;
     reg E_StoreMask,E_LoadMask,E_B_HW,E_LoadSign;
     reg [3:0] E_AluFunc;
     reg [1:0] E_ExeSelect;
@@ -155,7 +155,7 @@ assign D_cache_dout_o =M_MemOut;
     reg [31:0] M_AluOut, M_db, M_PC;
     reg [4:0] M_TargetReg;
     reg M_RegWrite,M_M2Reg,M_MemReq,M_MemWrite;
-    reg M_StoreMask,M_LoadMask,M_B_HW,M_LoadSign;
+    reg M_StoreMask,M_LoadMask,M_B_HW,M_LoadSign,M_NotAlign;
 
     //MEM stage
     wire[31:0] M_MemAddr,M_MemOut;
@@ -230,7 +230,7 @@ control_unit CU_0 (
     instruction,ID_canceled, rs,rt, qa,qb,
     da,db,imm,TargetReg,
     RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign,
-    StoreMask,LoadMask,B_HW,LoadSign,
+    StoreMask,LoadMask,B_HW,LoadSign,NotAlign,
     AluFunc,ExeSelect,AllowOverflow,
     M_TargetReg,M_M2Reg,M_RegWrite, E_TargetReg_out, E_M2Reg,E_RegWrite,
     E_AluOut, M_AluOut, M_MemOut ,
@@ -272,6 +272,7 @@ assign int_ack = int_rec & ~CPU_stall;
             E_LoadMask <=  1'b0;
             E_B_HW     <=  1'b0;
             E_LoadSign <=  1'b0;
+            E_NotAlign <=  1'b0;
             E_AluFunc  <=  4'b0;
             E_AllowOverflow <= 1'b0;
 
@@ -315,6 +316,7 @@ assign int_ack = int_rec & ~CPU_stall;
             E_LoadMask <= LoadMask ;
             E_B_HW     <= B_HW     ;
             E_LoadSign <= LoadSign ;
+            E_NotAlign <=  NotAlign;
             E_AluFunc  <= AluFunc  ;
             E_AllowOverflow <= AllowOverflow;
 
@@ -443,6 +445,7 @@ always @(posedge clk) begin
         M_LoadMask <=  1'b0;
         M_B_HW     <=  1'b0;
         M_LoadSign <=  1'b0;
+        M_NotAlign <=  1'b0;
         M_RegWrite <=  1'b0;
         M_M2Reg    <=  1'b0;
     end
@@ -458,6 +461,7 @@ always @(posedge clk) begin
         M_LoadMask <= E_LoadMask;
         M_B_HW     <= E_B_HW;
         M_LoadSign <= E_LoadSign;
+        M_NotAlign <= E_NotAlign;
         M_RegWrite <= E_RegWrite;
         M_M2Reg    <= E_M2Reg;
     end
@@ -484,29 +488,39 @@ reg [31:0] mask;
 always @(*) begin
     if(M_B_HW) begin
         case (offset)
-            2'b00  : mask = 32'h0000ffff;
-            2'b10  : mask = 32'hffff0000;
+            2'b00  : mask = 32'hffff0000;
+            2'b10  : mask = 32'h0000ffff;
             default: mask = 32'h00000000;
         endcase 
     end
     else begin
         case (offset)
-            2'b00 : mask = 32'h000000ff;
-            2'b01 : mask = 32'h0000ff00;
-            2'b10 : mask = 32'h00ff0000;
-            2'b11 : mask = 32'hff000000;
+            2'b00 : mask = 32'hff000000;
+            2'b01 : mask = 32'h00ff0000;
+            2'b10 : mask = 32'h0000ff00;
+            2'b11 : mask = 32'h000000ff;
         endcase
     end
 end
 //shift amount is determined by the offset
 reg [5:0] shift;
 always @(*) begin
+    if (M_B_HW) begin
     case (offset)
-        2'b00: shift = 0;
-        2'b01: shift = 8;
-        2'b10: shift =16;
-        2'b11: shift =24;
-    endcase
+        2'b00: shift = 16;
+        2'b10: shift = 0;
+        default: shift = 0;
+    endcase           
+    end
+    else begin
+    case (offset)
+        2'b00: shift = 24;
+        2'b01: shift = 16;
+        2'b10: shift =  8;
+        2'b11: shift =  0;
+    endcase        
+    end
+    
 end
 
 //shift and mask mechanism for store byte and half word instructions
@@ -530,8 +544,8 @@ assign M_MemOut = M_LoadMask?LoadMask_out : D_cache_dout;
 
 //for MEM stage exceptions
 //Misaligned exceptions
-wire M_misaligned = (M_LoadMask | M_StoreMask) & M_B_HW & offset[0] |
-                    ~(M_LoadMask | M_StoreMask) & (offset[1] | offset[0]);
+wire M_misaligned = (M_LoadMask | M_StoreMask|M_NotAlign) & M_B_HW & offset[0] |
+                    ~(M_LoadMask | M_StoreMask|M_NotAlign) & (offset[1] | offset[0]);
 //add other exceptions here
 //...
 //signal the exception to CU. 

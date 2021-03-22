@@ -39,9 +39,12 @@ module bus_control(
         //and register the grant value, this device is chosen, and 
         //other devices' request can't change the output.
             0: begin
-                if (req)
+                if (req & ready) 
+                    state <= 0;
+                else if (req) 
                     state <= 1;
-                    grant_reg <= grant_inner;
+                    
+                grant_reg <= grant_inner;
                     
             end
         //Busy state, in this state, if has a ready, jump to state idle
