@@ -14,5 +14,5 @@ b start             ;process next char
 
 
 str:
-#d "hello world\0"
+#d "Hello World!\n\0"
 end:

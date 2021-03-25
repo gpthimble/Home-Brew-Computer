@@ -16,7 +16,7 @@ module uart_tx(
     initial 
     begin
 		//This port has two registers
-        entry_start=32'h3ffffffe;
+        entry_start=32'h3ffffff0;
         entry_end  =32'h3fffffff;
 	end
  	
@@ -28,7 +28,29 @@ module uart_tx(
             selected = 1;
         else    selected =0;
     end
-	
+	//the timer
+    //The timer is configured as read only, and the unit is millisecond. 
+    reg [31:0] timer1, timer2,tick;
+
+    initial begin
+        timer1 = 32'b0;
+        timer2 = 32'b0;
+        tick   = 32'b0;
+    end
+    
+    always @(posedge clk)
+    begin
+        if (tick >= 50)
+        begin
+            tick <= 0;
+            timer1 <= timer1 +1;
+        end
+        else 
+        begin
+            tick <= tick +1;
+        end
+        timer2 <= timer2 +1;
+    end
 
 	// the uart transmitter
 	wire  TxD_busy;
@@ -48,9 +70,17 @@ module uart_tx(
     //will put data onto the bus. In any other condition, the output will be
     //high Z.
 	assign data = selected & ~r_w ? read :32'bz;
-	wire [31:0] read;
+	reg [31:0] read;
 	//only status register can be read. read the data and command register will return zero
-	assign read = address[0] ? 32'b0 : status;
+	always @(*)
+	begin
+		case (address[1:0])
+			2'b00: read = timer1;
+			2'b01: read = timer2;
+			2'b10: read = status;
+			default: read =32'b0;
+		endcase
+	end
 	//only command and data register can be written.
 	assign com_data = (selected & r_w & address[0]) ? data : 32'b0;
 

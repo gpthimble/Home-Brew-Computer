@@ -55,9 +55,9 @@ module soc (
 
     uart_tx tx_0 (clk, {2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW, TxD, TxD_ready);
 
-    timer timer0 (clk,{2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW
-                    //,timer1,timer2,read,selected
-                    );
+    //timer timer0 (clk,{2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW
+    //                //,timer1,timer2,read,selected
+    //                );
 
     always@ (posedge clk)
     begin
