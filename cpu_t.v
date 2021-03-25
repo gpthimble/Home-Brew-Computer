@@ -39,16 +39,17 @@ module cpu_t (
 
     cpu cpu0(BUS_addr,BUS_data,BUS_RW,BUS_ready,DMA[0],DMA[1],grant[0],
                 grant[1],int_in, int_ack, int_num, clr, clk,
-                PC, next_PC,instruction_o,I_cache_ready,
-                ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
-                da,db,imm,
-                E_PC,E_AluOut,
-                M_PC,D_cache_dout_o,D_cache_ready,
-                W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg);
+                //PC, next_PC,instruction_o,I_cache_ready,
+                //ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
+                //da,db,imm,
+                //E_PC,E_AluOut,
+                //M_PC,D_cache_dout_o,D_cache_ready,
+                //W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
+                );
     bus_control bus_control0(DMA,grant,BUS_req, BUS_ready,clk);
     dummy_slave ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
 
     uart_tx tx_0 (clk, {2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW, TxD, TxD_ready);
-
+    timer timer0 (clk,{2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW);
 
 endmodule

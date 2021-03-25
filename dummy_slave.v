@@ -75,8 +75,8 @@ module dummy_slave(
     assign data = (selected_reg & ~r_w_reg & ready) ? read :32'bz;
 
     //read is the continuous read data out.
-    wire [31:0] read;
-    assign read = mem[addr_reg];
+    reg [31:0] read;
+    
 
     //the state machine implements the dummy wait cycles and ready signal.
     //one dummy operation needs four cycles.
@@ -107,6 +107,7 @@ module dummy_slave(
         //dummy wait. 
         else if (state == 2'b10) begin
             state <= 2'b11;
+            read <= mem[addr_reg];
         end
         //operation ready
         else if (state == 2'b11) begin 

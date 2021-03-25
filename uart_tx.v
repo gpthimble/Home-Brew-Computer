@@ -24,7 +24,7 @@ module uart_tx(
     reg selected;
     always @(*)
     begin
-        if ((address >= entry_start) &(address <=entry_end) &request )
+        if (($unsigned(address) >= $unsigned(entry_start)) &($unsigned(address) <=$unsigned(entry_end)) &request )
             selected = 1;
         else    selected =0;
     end
@@ -65,7 +65,7 @@ endmodule
 // TX: 8-bit data, 2 stop, no-parity
 // RX: 8-bit data, 1 stop, no-parity (the receiver can accept more stop bits of course)
 
-`define SIMULATION   // in this mode, TX outputs one bit per clock cycle
+//`define SIMULATION   // in this mode, TX outputs one bit per clock cycle
                        // and RX receives one bit per clock cycle (for fast simulations)
 
 ////////////////////////////////////////////////////////

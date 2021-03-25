@@ -14,24 +14,24 @@ module cpu (
     clr, clk,
 
     //for debugging
-    PC, next_PC_o,instruction_o,I_cache_ready,
-    ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
-    da,db,imm,
-    E_PC,E_AluOut,
-    M_PC,D_cache_dout_o,D_cache_ready,
-    W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
-    
+    //PC, next_PC_o,instruction_o,I_cache_ready,
+    //ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
+    //da,db,imm,
+    //E_PC,E_AluOut,
+    //M_PC,D_cache_dout_o,D_cache_ready,
+    //W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
+    //
 );
 //for debugging
-output [31:0] PC,ID_PC,E_PC,M_PC, next_PC_o,instruction_o,D_cache_dout_o,W_RegDate_in
-        ,E_AluOut,da,db,imm;
-output I_cache_ready,BP_miss,stall_IF_ID,W_canceled,W_RegWrite,
-        W_M2Reg,D_cache_ready,CPU_stall,ban_IF,ban_ID,ban_EXE,ban_MEM;
-output [4:0] W_TargetReg;
-assign next_PC_o = next_PC_in;
-assign instruction_o = I_cache_out;
-
-assign D_cache_dout_o =M_MemOut;
+//output [31:0] PC,ID_PC,E_PC,M_PC, next_PC_o,instruction_o,D_cache_dout_o,W_RegDate_in
+//        ,E_AluOut,da,db,imm;
+//output I_cache_ready,BP_miss,stall_IF_ID,W_canceled,W_RegWrite,
+//        W_M2Reg,D_cache_ready,CPU_stall,ban_IF,ban_ID,ban_EXE,ban_MEM;
+//output [4:0] W_TargetReg;
+//assign next_PC_o = next_PC_in;
+//assign instruction_o = I_cache_out;
+//
+//assign D_cache_dout_o =M_MemOut;
 //######################## Interface description ###########################
 //------------------------ interface to the bus -----------------------------
     //32-bit address BUS
@@ -62,7 +62,7 @@ assign D_cache_dout_o =M_MemOut;
     //Interrupt ack. If the interrupt is processed by CPU, CPU send this signal
     //to the interrupt controller, and the controller withdraw the request after
     //interrupt ack.
-    output int_ack;
+    output reg int_ack;
     //20-bit interrupt vector number input.
     input [19:0] int_num;
 //--------------------- clock and clear-------------------------------------
@@ -201,8 +201,10 @@ assign D_cache_dout_o =M_MemOut;
                     BUS_addr,BUS_data,BUS_req_I,BUS_RW,BUS_grant_I,BUS_ready,
                     ban_IF,
                     clr,
-                    clk,
-                    ,,,,,,,,);
+                    clk
+                    //,
+                    //,,,,,,,,
+                    );
 
 //--------------------Register between IF and ID stage----------------------
     always @(posedge clk)
@@ -248,7 +250,13 @@ control_unit CU_0 (
     int_num,int_in,int_rec,
     clk,clr
 );
-assign int_ack = int_rec & ~CPU_stall;
+always @(posedge clk)
+begin
+    if (~CPU_stall) begin
+        int_ack <= int_rec;
+    end
+end
+//assign int_ack = int_rec & ~CPU_stall;
 //---------------------register between ID and EXE stage---------------------
     always @(posedge clk) begin
         if (clr)begin
@@ -477,8 +485,9 @@ cache D_cache (CPU_stall,E_AluOut,D_cache_din,E_MemReq & ~(E_canceled|ban_EXE),E
                 BUS_addr,BUS_data,BUS_req_D,BUS_RW,BUS_grant_D,BUS_ready,
                 ban_MEM,
                 clr,
-                clk,
-                ,,,,,,,,
+                clk
+                //,
+                //,,,,,,,,
             );
 //load store half word and byte support
 //byte offset for load/store byte/half word instructions

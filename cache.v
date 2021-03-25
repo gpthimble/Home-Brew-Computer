@@ -77,7 +77,7 @@ module cache
     clr,
     clk
     //for debug 
-    ,WE_A_o,WE_B_o,WE_C_o,need_update_o,TAG_A_out_o,HIT_A,HIT_B,RAM_A_out,TAG_A_sync
+    //,WE_A_o,WE_B_o,WE_C_o,need_update_o,TAG_A_out_o,HIT_A,HIT_B,RAM_A_out,TAG_A_sync
 );
 
 //------------------------- Interface description   -----------------------------
@@ -145,23 +145,23 @@ module cache
     input clk;
 
 //for debug
-    output WE_A_o,WE_B_o,WE_C_o,need_update_o,HIT_A,HIT_B;    
-    output [tag_size-1 : 0] TAG_A_out_o;
-    output [31:0] RAM_A_out;
-
-    wire WE_A_o = WE_A;
-    wire WE_B_o = WE_B;
-    wire WE_C_o = WE_C;
-    wire need_update_o = need_update;
-    assign TAG_A_out_o = TAG_A_out;
-    output [31 : 0] TAG_A_sync;
-    assign TAG_A_sync = cache_sync_A;
+//    output WE_A_o,WE_B_o,WE_C_o,need_update_o,HIT_A,HIT_B;    
+//    output [tag_size-1 : 0] TAG_A_out_o;
+//    output [31:0] RAM_A_out;
+//
+//    wire WE_A_o = WE_A;
+//    wire WE_B_o = WE_B;
+//    wire WE_C_o = WE_C;
+//    wire need_update_o = need_update;
+//    assign TAG_A_out_o = TAG_A_out;
+//    output [31 : 0] TAG_A_sync;
+//    assign TAG_A_sync = cache_sync_A;
 
 
 //--------------------------    Module implementation  -------------------------
 
 //This pair of parameters describe the range of not cached memory.
-parameter no_cache_start=32'hFFFFFFF8;
+parameter no_cache_start=32'hFFFFFFF0;
 parameter no_cache_end =32'hFFFFFFFC;
 
 //Number of Lines in each group.
