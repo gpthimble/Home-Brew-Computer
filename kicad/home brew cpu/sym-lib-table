@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name home-brew-cpu-rescue)(type Legacy)(uri "${KIPRJMOD}/home brew cpu-rescue.lib")(options "")(descr ""))
+)

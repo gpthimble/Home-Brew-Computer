@@ -1,4 +1,4 @@
-create_clock -name clk -period 10.000 clk
+create_clock -name clk -period 20 clk
 # Constrain the input I/O path 
 set_input_delay -clock clk -max 3 [all_inputs] 
 set_input_delay -clock clk -min 2 [all_inputs] 

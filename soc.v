@@ -51,8 +51,9 @@ module soc (
                 //W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
                 );
     bus_control bus_control0(DMA,grant,BUS_req, BUS_ready,clk);
-    dummy_slave ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
-
+    //dummy_slave ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
+    //dummy_slave_mid ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
+    dummy_slave_fast ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
     uart_tx tx_0 (clk, {2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW, TxD, TxD_ready);
 
     //timer timer0 (clk,{2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW

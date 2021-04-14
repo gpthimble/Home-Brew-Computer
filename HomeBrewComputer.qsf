@@ -39,17 +39,35 @@
 
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE22F17C6
-set_global_assignment -name TOP_LEVEL_ENTITY cache_t
+set_global_assignment -name TOP_LEVEL_ENTITY soc
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 19.1.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "15:24:18  OCTOBER 01, 2020"
-set_global_assignment -name LAST_QUARTUS_VERSION "19.1.0 Lite Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "20.1.1 Lite Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
-set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.2V
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (Verilog)"
+set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
+set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
+set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH test -section_id eda_simulation
+set_global_assignment -name EDA_TEST_BENCH_NAME cache_t -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id cache_t
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME cache_t -section_id cache_t
+set_global_assignment -name EDA_TEST_BENCH_NAME test -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id test
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME test -section_id test
+set_global_assignment -name EDA_TEST_BENCH_FILE cache_t.v -section_id cache_t
+set_global_assignment -name EDA_TEST_BENCH_FILE simulation/modelsim/cache_t.vt -section_id test
+set_global_assignment -name DEVICE_FILTER_SPEED_GRADE FASTEST
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_symbol
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_signal_integrity
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_timing
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_boundary_scan
+set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
 set_instance_assignment -name BOARD_MODEL_NEAR_PULLDOWN_R 30000 -to ready_o
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to address_o[31]
@@ -117,22 +135,22 @@ set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[3]
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[2]
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[1]
 set_instance_assignment -name BOARD_MODEL_FAR_PULLDOWN_R 50000 -to data_o[0]
-set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (Verilog)"
-set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
-set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
-set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
-set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH test -section_id eda_simulation
-set_global_assignment -name EDA_TEST_BENCH_NAME cache_t -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id cache_t
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME cache_t -section_id cache_t
-set_global_assignment -name EDA_TEST_BENCH_NAME test -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id test
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME test -section_id test
-set_global_assignment -name EDA_TEST_BENCH_FILE cache_t.v -section_id cache_t
-set_global_assignment -name EDA_TEST_BENCH_FILE simulation/modelsim/cache_t.vt -section_id test
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to TxD
+set_location_assignment PIN_D3 -to TxD
+set_location_assignment PIN_R8 -to clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk
+set_location_assignment PIN_J15 -to clr_in
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name VERILOG_FILE timer.v
+set_global_assignment -name VERILOG_FILE soc.v
+set_global_assignment -name MIF_FILE test.mif
+set_global_assignment -name HEX_FILE test.hex
+set_global_assignment -name VERILOG_FILE cpu_t.v
+set_global_assignment -name VERILOG_FILE control_unit_2stage.v
+set_global_assignment -name VERILOG_FILE control_unit.v
+set_global_assignment -name VECTOR_WAVEFORM_FILE cache_t.vwf
 set_global_assignment -name MIF_FILE ram.mif
 set_global_assignment -name VERILOG_FILE cache_t.v
 set_global_assignment -name VERILOG_FILE cache.v
@@ -147,7 +165,6 @@ set_global_assignment -name VERILOG_FILE pipe_pc.v
 set_global_assignment -name VERILOG_FILE pipe_m_w_reg.v
 set_global_assignment -name VERILOG_FILE pipe_ir.v
 set_global_assignment -name VERILOG_FILE pipe_if.v
-set_global_assignment -name VERILOG_FILE pipe_id.v
 set_global_assignment -name VERILOG_FILE pipe_exe.v
 set_global_assignment -name VERILOG_FILE pipe_e_m_reg.v
 set_global_assignment -name VERILOG_FILE pipe_d_e_reg.v
@@ -164,15 +181,14 @@ set_global_assignment -name SDC_FILE HomeBrewComputer.sdc
 set_global_assignment -name VECTOR_WAVEFORM_FILE dffe32.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE regfile_t.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform.vwf
-set_global_assignment -name QIP_FILE test.qip
 set_global_assignment -name VECTOR_WAVEFORM_FILE bus_control_f.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform1.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE dummy_slave_t.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE bus_t.vwf
-set_global_assignment -name VERILOG_FILE test.v
 set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform3.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform4.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform5.vwf
 set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform6.vwf
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to BUS_ready_o
+set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform7.vwf
+set_global_assignment -name VECTOR_WAVEFORM_FILE Waveform8.vwf
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

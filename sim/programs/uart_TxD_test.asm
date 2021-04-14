@@ -12,7 +12,6 @@ sw $5, ($2)         ;put char
 addu $3, $3, 1      ;pointer grew one byte
 b start             ;process next char
 
-
 str:
 #d "Hello World!\n\0"
 end:
