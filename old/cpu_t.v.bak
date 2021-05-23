@@ -1,0 +1,26 @@
+//This is the test bench of the CPU
+
+module cpu_t (
+    clk,clr,    
+    int_in, 
+    int_ack, 
+    int_num,
+
+);
+    input clk,clr;
+    input int_in;
+    output int_ack;
+    input [19:0] int_num;
+    output [31:0] pc;
+
+
+    wire [31:0] BUS_addr, BUS_data;
+    wire BUS_req, BUS_ready, BUS_RW;
+    wire [7:0] DMA, grant;
+
+    cpu cpu0(BUS_addr,BUS_data,BUS_RW,BUS_ready,DMA[0],DMA[1],grant[0],grant[1],int_in, int_ack, int_num, clr, clk);
+    bus_control bus_control0(DMA,grant,BUS_req, BUS_ready,clk);
+    dummy_slave ram0 (clk,BUS_addr,BUS_data,BUS_req,BUS_ready,BUS_RW);
+
+
+endmodule
