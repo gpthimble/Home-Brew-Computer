@@ -49,7 +49,12 @@ SystemOT
 |   |-- programs\                   programs used in simulations
 |   |   |-- *.c                         programs written in C language
 |   |   |-- *.asm                       programs in assembly
+|   |   |-- otsys.asm                   assembly instruction template for customASM
+|   |   |-- lib.asm                     function library for mul div mod timer and UART 
 |   |-- results\                    simulation results
 |   |   |-- *.vcd                       value change dump files of the simulations
 |   |   |-- *.png                       screen shots of GTKwave
+|--- some files generate by the Quartus software
+```
+
 
