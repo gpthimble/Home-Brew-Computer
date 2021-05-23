@@ -26,22 +26,30 @@ SystemOT is just an open-source customizable system-on-chip soft-core. In a word
 
 ```
 SystemOT
-|-- src\                            Verilog HDL source code of SystemOT
+|-- src\                         Verilog HDL source code of SystemOT
 |   |-- soc.v                       SystemOT's top-level design
-|   |   |-- cpu.v                   the processor module in SystemOT
-|   |   |   |-- cache.v             the cache module
-|   |   |   |-- regfile.v           the register file
-|   |   |   |-- control_unit.v      the control unit
-|   |   |   |-- alu.v               the arithmetic unit
-|   |   |   |   |-- add_sub.v       module for addition and subtraction
-|   |   |   |   |-- clo_clz.v       module for the counting leading zeros and ones
-|   |   |   |   |-- shifter.v       module for the shifting operations
-|   |   |-- bus_control.v           the BUS controller module in SystemOT
-|   |   |-- dummy_slave.v           the Demo RAM controller module in SystemOT
-|   |   |   |-- *.mif               memory files contain the binary executable
-|   |   |-- uart_tx.v               the Demo UART TX and timer module in SystemOT
-|   |   |-- timer.v                 the timer module
-|   |   |-- dummy_master.v          the dummy DMA device for validation
-|-- testbench\
-|   |
+|   |   |-- cpu.v                       the processor module in SystemOT
+|   |   |   |-- cache.v                     the cache module
+|   |   |   |-- regfile.v                   the register file
+|   |   |   |-- control_unit.v              the control unit
+|   |   |   |-- alu.v                       the arithmetic unit
+|   |   |   |   |-- add_sub.v                   module for addition and subtraction
+|   |   |   |   |-- clo_clz.v                   module for the counting leading zeros and ones
+|   |   |   |   |-- shifter.v                   module for the shifting operations
+|   |   |-- bus_control.v               the BUS controller module in SystemOT
+|   |   |-- dummy_slave.v               the Demo RAM controller module in SystemOT
+|   |   |   |-- *.mif                       memory files contain the binary executable
+|   |   |-- uart_tx.v                   the Demo UART TX and timer module in SystemOT
+|   |   |-- timer.v                     the timer module
+|   |   |-- dummy_master.v              the dummy DMA device for validation
+|-- testbench\                   testbenches for SystemOT
+|   |-- *.vwf                       wave form file for Intel Quartus
+|   |-- *.v                         test bench written in Verilog HDL
+|-- sim\                         simulation programs and result
+|   |-- programs\                   programs used in simulations
+|   |   |-- *.c                         programs written in C language
+|   |   |-- *.asm                       programs in assembly
+|   |-- results\                    simulation results
+|   |   |-- *.vcd                       value change dump files of the simulations
+|   |   |-- *.png                       screen shots of GTKwave
 
