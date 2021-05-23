@@ -243,6 +243,8 @@ The instruction cache and data cache of SystemOT are configured to 4KB, the memo
 
 I'm a father, a son, a husband, a teacher and a hacker.
 
+## Copy Rights
+Everyone can use and modify SystemOT, but users and modifiers must declare that SystemOT has been used in their project.
 
 ## References
 1. B. Buzbee, [Homebrew CPU](http://www.homebrewcpu.com/)
