@@ -124,7 +124,8 @@ SystemOT
 |   |-- results\                    simulation results
 |   |   |-- *.vcd                       value change dump files of the simulations
 |   |   |-- *.png                       screen shots of GTKwave
-|--- some files generate by the Quartus software
+|-- old\                         some old files                       
+|-- some files generate by the Quartus software
 ```
 
 ## How to Use SystemOT
