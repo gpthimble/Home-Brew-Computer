@@ -6,4 +6,5 @@ output_files/*
 simulation/*
 simualtion/qsim/*
 simulation/modelsim/*
+.VSCodeCounter/*
 
