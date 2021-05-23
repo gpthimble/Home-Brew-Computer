@@ -4,6 +4,10 @@
 
 SystemOT is just an open-source customizable system-on-chip soft-core. In a word, SystemOT is another **home-brew CPU** core.
 
+## Goals of SystemOT
+
+
+
 ## What is Included in the Project?
 
 ### Hardware
@@ -65,4 +69,14 @@ SystemOT
 |--- some files generate by the Quartus software
 ```
 
+
+## References
+B. Buzbee, [Homebrew CPU](http://www.homebrewcpu.com/)
+M. M. Mano, Computer system architecture
+A. S. a. W. A. S. Tanenbaum, Operating systems: design and implementation
+Y. a. o. Li, Computer principles and design in Verilog HDL
+D. Sweetman, See MIPS run
+J. L. a. P. D. A. Hennessy, Computer architecture: a quantitative approach
+R. P. Weicker, Dhrystone: a synthetic systems programming benchmark
+C. W. Fraser, LCC A retargetable compiler for ANSI C
 
