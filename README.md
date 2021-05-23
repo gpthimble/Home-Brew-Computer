@@ -26,7 +26,7 @@ The hardware structure of SystemOT is shown in the figure above, which includes:
 * Ported [Dhrystone 2.1](https://github.com/gpthimble/Home-Brew-Computer/blob/master/sim/programs/dhrystone2_1.c) performance benchmark program
 
 ## Documents
-You can find the detailed documentation and development log [here](gpthimble.github.io)
+You can find the detailed documentation and development log [here](https://gpthimble.github.io)
 
 
 
