@@ -238,7 +238,9 @@ The instruction cache and data cache of SystemOT are configured to 4KB, the memo
 ![Dhrystone 2.1 result](./doc/img/dhrystone.png)
 
 
+## About Me
 
+I'm a father, a son, a husband, a teacher and a hacker.
 
 
 ## References
