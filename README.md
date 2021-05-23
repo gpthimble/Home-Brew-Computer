@@ -4,9 +4,15 @@
 
 SystemOT is just an open-source customizable system-on-chip soft-core. In a word, SystemOT is another **home-brew CPU** core.
 
-## Goals of SystemOT
+## Why I designed SystemOT?
+SystemOT names from System of Old Technology, this means that new technology and extreme performance are not the goal of the project.
+SystemOT is a processor soft core designed for scientific research and education, and I design it **just because I can**.
+Generally speaking, the goal of this project is to make it work, make it simple, and make it easy to understand.
+Specifically, the long-term goal of this project is to make it work like a computer we use every day, with a working operating system and graphical interface and other input and output interfaces.
 
+## Status and Road Map
 
+## Currently Supported Features
 
 ## What is Included in the Project?
 
@@ -30,7 +36,8 @@ The hardware structure of SystemOT is shown in the figure above, which includes:
 * Ported [Dhrystone 2.1](https://github.com/gpthimble/Home-Brew-Computer/blob/master/sim/programs/dhrystone2_1.c) performance benchmark program
 
 ## Documents
-You can find the detailed documentation and development log [here](https://gpthimble.github.io)
+You can find the detailed documentation and development log [here](https://gpthimble.github.io).
+
 
 
 
@@ -69,14 +76,19 @@ SystemOT
 |--- some files generate by the Quartus software
 ```
 
+## How to Use SystemOT
+
+## Prove of Work
+
 
 ## References
-B. Buzbee, [Homebrew CPU](http://www.homebrewcpu.com/)
-M. M. Mano, Computer system architecture
-A. S. a. W. A. S. Tanenbaum, Operating systems: design and implementation
-Y. a. o. Li, Computer principles and design in Verilog HDL
-D. Sweetman, See MIPS run
-J. L. a. P. D. A. Hennessy, Computer architecture: a quantitative approach
-R. P. Weicker, Dhrystone: a synthetic systems programming benchmark
-C. W. Fraser, LCC A retargetable compiler for ANSI C
+1. B. Buzbee, [Homebrew CPU](http://www.homebrewcpu.com/)
+2. M. M. Mano, Computer system architecture
+3. A. S. a. W. A. S. Tanenbaum, Operating systems: design and implementation
+4. Y. a. o. Li, Computer principles and design in Verilog HDL
+5. D. Sweetman, See MIPS run
+6. J. L. a. P. D. A. Hennessy, Computer architecture: a quantitative approach
+7. R. P. Weicker, Dhrystone: a synthetic systems programming benchmark
+8. C. W. Fraser, LCC A retargetable compiler for ANSI C
+9. h. a. c. a. vascofazza, [customasm](https://github.com/hlorenzi/customasm)
 
