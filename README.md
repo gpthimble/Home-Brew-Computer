@@ -22,4 +22,17 @@ SystemOT is just an open-source customizable system-on-chip soft-core. In a word
 * Demo Programs and Functions
 * Ported Dhrystone 2.1 performance benchmark program
 
-## File Structure
+## Hierarchy in Files and Modules
+
+```
+SystemOT
+|-- soc.v                   SystemOT's top-level design
+|   |-- cpu.v               the processor module in SystemOT
+|   |   |-- cache.v         the cache module
+|   |   |-- regfile.v       the register file
+|   |   |-- control_unit.v  the control unit
+|   |   |-- alu.v           the arithmetic unit
+|   |-- bus_control.v       the BUS controller module in SystemOT
+|   |-- dummy_slave.v       the Demo RAM controller module in SystemOT
+|   |-- uart_tx.v           the Demo Uart TX and timmer module in SystemOT
+
