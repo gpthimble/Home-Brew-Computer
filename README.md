@@ -201,7 +201,7 @@ First, pre process it with the preprocessor:
 Then, compile it into assembly code:
 
 ```
-$./rcc helloworld_p.c helloworld.asm
+$./rcc -target=systemOT -pic=0 helloworld_p.c helloworld.asm
 ```
 
 After that, we need to pre-assemble the output of the compiler with the pre-assembler:
