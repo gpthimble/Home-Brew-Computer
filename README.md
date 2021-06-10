@@ -231,11 +231,13 @@ The use  of SystemOT is similar to other processor soft cores. After editing the
 
 ### 4. Proof of Work
 Connected the pin assigned for UART_TX to a USB-RS232 converter or an oscilloscope, string "Hello World" can be read out, which is pretty cool!
+
 ![Hello world](./doc/img/helloworld.png)
 
 With the same process above, I also successfully run the ported Dhrystone 2.1 performance benchmark. 
 
 The instruction cache and data cache of SystemOT are configured to 4KB, the memory controller uses the fast mode, and the following results are obtained at 50Mhz frequency, which is not bad at all!
+
 ![Dhrystone 2.1 result](./doc/img/dhrystone.png)
 
 
