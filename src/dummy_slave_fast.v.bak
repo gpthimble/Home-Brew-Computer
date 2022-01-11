@@ -9,7 +9,7 @@ module dummy_slave_fast(
 
 //--------------------------    Module implementation  -------------------------
     //dummy memory
-    (* ram_init_file = "sim/programs/dhrystone2_1.mif" *) reg [31:0] mem [0:8191];
+    (* ram_init_file = "test.mif" *) reg [31:0] mem [0:8191];
 
     //internal state machine
     reg [ 2:0] state;
