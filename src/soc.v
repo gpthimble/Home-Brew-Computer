@@ -1,12 +1,13 @@
 //This is the test bench of the CPU
 
 module soc (
-    clk,clr_in,    
+    clk_in,clr_in,    
     int_in, 
     int_ack, 
     int_num,
     TxD,TxD_ready,
     ledo0,ledo1,ledo2,ledo3,ledo4,ledo5,ledo6,ledo7,
+    step_mode,step,
     //,timer1,timer2,read,selected
 
     //,BUS_addr, BUS_data,
@@ -19,15 +20,17 @@ module soc (
     //M_PC,D_cache_dout_o,D_cache_ready,
     //W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
 );
-    input clk,clr_in;
+    input clk_in,clr_in;
     input int_in;
     output int_ack;
     input [19:0] int_num;
     output TxD,TxD_ready;
     output [6:0] ledo0,ledo1,ledo2,ledo3,ledo4,ledo5,ledo6,ledo7;
+    input step_mode,step;
     //output [31:0] timer1,timer2,read;
     //output selected;
-    reg clr;
+    reg clr,clk;
+
 
     //output [31:0] BUS_addr, BUS_data;
     //output BUS_req, BUS_ready, BUS_RW;
@@ -56,7 +59,7 @@ module soc (
     //dummy_slave ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
     //dummy_slave_mid ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
     dummy_slave_fast ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
-    uart_tx tx_0 (clk, {2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW, TxD, TxD_ready);
+    uart_tx tx_0 (clk_in, {2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW, TxD, TxD_ready, clk);
 
     //timer timer0 (clk,{2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW
     //                //,timer1,timer2,read,selected
@@ -66,7 +69,23 @@ module soc (
     begin
         clr <= ~clr_in;
     end
-	 
+
+    //add step mode
+
+    reg step_mode_reg , step_reg;
+    always @(posedge clk_in) begin
+        step_mode_reg <= step_mode;
+        step_reg  <= step;
+    end
+
+
+    always @(*)
+    begin
+        if (step_mode_reg)
+            clk = clk_in;
+        else
+            clk = step_reg;
+    end
 	 
 	 wire [6:0] led0,led1,led2,led3,led4,led5,led6,led7;
 	 disp disp0(BUS_addr[3:0],led0);
@@ -104,37 +123,37 @@ module disp(
 always @*
 case (x)
 4'b0000 :      	//Hexadecimal 0
-z = 7'b1111110;
+z = 7'b0111111;
 4'b0001 :    		//Hexadecimal 1
-z = 7'b0110000  ;
+z = 7'b0000110  ;
 4'b0010 :  		// Hexadecimal 2
-z = 7'b1101101 ; 
+z = 7'b1011011 ;
 4'b0011 : 		// Hexadecimal 3
-z = 7'b1111001 ;
+z = 7'b1001111 ;
 4'b0100 :		// Hexadecimal 4
-z = 7'b0110011 ;
+z = 7'b1100110 ;
 4'b0101 :		// Hexadecimal 5
-z = 7'b1011011 ;  
+z = 7'b1101101 ;
 4'b0110 :		// Hexadecimal 6
-z = 7'b1011111 ;
+z = 7'b1111101 ;
 4'b0111 :		// Hexadecimal 7
-z = 7'b1110000;
+z = 7'b0000111;
 4'b1000 :     		 //Hexadecimal 8
 z = 7'b1111111;
 4'b1001 :    		//Hexadecimal 9
-z = 7'b1111011 ;
+z = 7'b1101111 ;
 4'b1010 :  		// Hexadecimal A
-z = 7'b1110111 ; 
+z = 7'b1110111 ;
 4'b1011 : 		// Hexadecimal B
-z = 7'b0011111;
+z = 7'b1111100;
 4'b1100 :		// Hexadecimal C
-z = 7'b1001110 ;
+z = 7'b0111001 ;
 4'b1101 :		// Hexadecimal D
-z = 7'b0111101 ;
+z = 7'b1011110 ;
 4'b1110 :		// Hexadecimal E
-z = 7'b1001111 ;
+z = 7'b1111001 ;
 4'b1111 :		// Hexadecimal F
-z = 7'b1000111 ;
+z = 7'b1110001 ;
 endcase
  
 endmodule

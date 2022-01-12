@@ -43,12 +43,12 @@ module uart_tx(
 		end
 	end
 
-	reg async_selected;
+	reg aysnc_selected;
 	always @(posedge clk) begin
 		if (selected)
 			async_selected <= 0;
 		else
-			async_selected <=1;
+			aysnc_selected <=1;
 	end
 
 
@@ -90,7 +90,7 @@ module uart_tx(
 
 	wire [31:0] status = {31'b0,TxD_busy};
 	wire  [31:0] com_data;
-	async_transmitter tx_0 (clk,com_data[8]&selected&async_selected,com_data[7:0],TxD,TxD_busy);
+	async_transmitter tx_0 (clk,com_data[8]&selected&aysnc_selected,com_data[7:0],TxD,TxD_busy);
 
 
 	//bus interface
