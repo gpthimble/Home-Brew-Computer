@@ -1,4 +1,4 @@
--- Copyright (C) 2020  Intel Corporation. All rights reserved.
+-- Copyright (C) 2021  Intel Corporation. All rights reserved.
 -- Your use of Intel Corporation's design tools, logic functions 
 -- and other software and tools, and any partner logic 
 -- functions, and any output files from any of the foregoing 
@@ -74,8 +74,8 @@ CONTENT BEGIN
 	0031  :   2404143C;
 	0032  :   24051775;
 	0033  :   0C000449;
-	0034  :   3C150000;
-	0035  :   36B5C350;
+	0034  :   3C150003;
+	0035  :   36B50D40;
 	0036  :   2694FFFF;
 	0037  :   2418000A;
 	0038  :   AC181EBC;

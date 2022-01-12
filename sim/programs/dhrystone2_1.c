@@ -143,7 +143,7 @@ int             Microseconds,
    strcpy(Reg_Define, "Register option  Not selected.");
 
 
-   Number_Of_Runs = 50000;
+   Number_Of_Runs = 200000;
    do
    {
 

@@ -15,19 +15,43 @@ module uart_tx(
     reg [31:0] entry_start, entry_end;
     initial 
     begin
-		//This port has two registers
+		//This port has four registers
         entry_start=32'h3ffffff0;
         entry_end  =32'h3fffffff;
 	end
  	
+	//registered all bus signals
+	reg r_w_reg, request_reg;
+	reg [31:0] address_reg, data_reg;
+
+	always @(posedge clk) begin
+		if (~selected)
+		begin 
+		address_reg <= address;
+		data_reg 	<= data;
+		r_w_reg 	<= r_w;
+		request_reg <= request;
+		end
+		else
+		begin 
+		address_reg <= 32'b0;
+		data_reg 	<= 32'b0;
+		r_w_reg 	<= 0;
+		request_reg <= 0;
+
+		end
+	end
+
+
     //selected if request in address range
     reg selected;
     always @(*)
     begin
-        if (($unsigned(address) >= $unsigned(entry_start)) &($unsigned(address) <=$unsigned(entry_end)) &request )
+        if (($unsigned(address_reg) >= $unsigned(entry_start)) &($unsigned(address_reg) <=$unsigned(entry_end)) &request_reg )
             selected = 1;
         else    selected =0;
     end
+
 	//the timer
     //The timer is configured as read only, and the unit is millisecond. 
     reg [31:0] timer1, timer2,tick;
@@ -69,12 +93,12 @@ module uart_tx(
     //if device is selected and the request is a read request, this device
     //will put data onto the bus. In any other condition, the output will be
     //high Z.
-	assign data = selected & ~r_w ? read :32'bz;
+	assign data = selected & ~r_w_reg ? read :32'bz;
 	reg [31:0] read;
 	//only status register can be read. read the data and command register will return zero
 	always @(*)
 	begin
-		case (address[1:0])
+		case (address_reg[1:0])
 			2'b00: read = timer1;
 			2'b01: read = timer2;
 			2'b10: read = status;
@@ -82,7 +106,7 @@ module uart_tx(
 		endcase
 	end
 	//only command and data register can be written.
-	assign com_data = (selected & r_w & address[0]) ? data : 32'b0;
+	assign com_data = (selected & r_w_reg & address_reg[0]) ? data_reg : 32'b0;
 
 endmodule	
 
