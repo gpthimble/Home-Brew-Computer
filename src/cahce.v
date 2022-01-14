@@ -168,7 +168,7 @@ parameter no_cache_end =32'hFFFFFFFC;
 localparam cache_lines = 2<< (INDEX -1);
 localparam tag_size = 32-2- INDEX;
 //default size of the cache is two 512 bytes (128 lines) set, total size is 1KB.
-parameter INDEX=2;
+parameter INDEX=10;
 parameter WIDTH=32;
 
 //------------------------------    FROM CPU  -----------------------------------
@@ -470,8 +470,33 @@ assign BUS_data = BUS_grant ? data_to_bus : 32'bz;
 //BUS_req is masked by CPU_req_reg, use registered value of cpu req can avoid
 //false req caused by next_PC.
 //BUS request can be canceled if the request hasn't been sent
-assign BUS_req = CPU_req_reg &(~cancel | req_sent) & ((~CPU_RW_reg & ~CACHE_HIT_R )
-                |(CPU_RW_reg & ~ready_reg));
+//assign BUS_req = CPU_req_reg &(~cancel | req_sent) & ((~CPU_RW_reg & ~CACHE_HIT_R )
+//                |(CPU_RW_reg & ~ready_reg));
+
+assign BUS_req = BUS_req_reg;
+//To increase the max frequency, registered the BUS_req signal to reduce combination
+//logic level between cache and the BUS.
+reg BUS_req_reg;
+always @(posedge clk)
+begin
+    if (clr)
+    BUS_req_reg <= 0;
+    else
+        begin
+        //Request to the Bus is sent only when if there's not a write or read hit, and
+        //if the request hasn't been canceled.
+            if ( CPU_req_reg &(~cancel | req_sent) & ((~CPU_RW_reg & ~(ready_in | ready_reg)&~CACHE_HIT_R )
+            |(CPU_RW_reg & ~CACHE_HIT_W)))
+                BUS_req_reg <= 1;
+        
+            else 
+                BUS_req_reg <= 0;
+        end
+
+end
+
+assign CACHE_HIT_W = (ready_in | ready_reg) & CPU_RW_reg;
+
 //-----------------------------------------------------------------------------
 
 //------------------------------ Cache control---------------------------------
@@ -493,6 +518,8 @@ begin
     //req_sent goes high when the cache request the bus. 
     else if (BUS_grant)
         req_sent <=1;
+    else 
+        req_sent <=0;
 end
 
 //--------------------------------sync control---------------------------------
