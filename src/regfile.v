@@ -71,7 +71,8 @@ module regfile(
         data_out_b =  register[r_number_b];
     end
 
-
+    
+    integer i;
     always @(posedge clk)
     begin
 
@@ -79,7 +80,6 @@ module regfile(
       if (clr== 1) begin
 
         //clear is implemented by for loop.
-        integer i;
         for (i = 1; i<32; i=i+1)
           register[i]<=0;
     

@@ -426,11 +426,11 @@ module control_unit(
     //by the rd field of the instructions. 
     //CP0_REG[4] is the backup of STATUS register. 
     reg [31:0] CP0_Reg[5];
+    integer i;
     always @(posedge clk)
     begin
         if (clr)
         begin
-           integer i;
             for (i = 0; i < 5; i = i + 1)
                 CP0_Reg[i] <= 0; 
         end

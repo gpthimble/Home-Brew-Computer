@@ -8,6 +8,9 @@ module soc (
     TxD,TxD_ready,
     ledo0,ledo1,ledo2,ledo3,ledo4,ledo5,ledo6,ledo7,
     step_mode,step,
+    DMA_0, DMA_1,
+    grant_0, grant_1,
+    BUS_req_o, BUS_ready_o,BUS_RW_o,
     //,timer1,timer2,read,selected
 
     //,BUS_addr, BUS_data,
@@ -30,8 +33,18 @@ module soc (
     //output [31:0] timer1,timer2,read;
     //output selected;
     reg clr,clk;
+    output  reg   DMA_0, DMA_1,grant_0, grant_1,BUS_req_o, BUS_ready_o,BUS_RW_o;
 
-
+    always @ (posedge clk_in)
+    begin
+    DMA_0       <= DMA[0];
+    DMA_1       <= DMA[1];
+    grant_0     <= grant[0];
+    grant_1     <= grant[1];
+    BUS_req_o   <= BUS_req;
+    BUS_ready_o <= BUS_ready;
+    BUS_RW_o    <= BUS_RW;
+    end
     //output [31:0] BUS_addr, BUS_data;
     //output BUS_req, BUS_ready, BUS_RW;
     //output [7:0] DMA, grant;
@@ -101,7 +114,7 @@ module soc (
 	 reg[6:0] ledo0,ledo1,ledo2,ledo3,ledo4,ledo5,ledo6,ledo7;
 	 
 	 
-    always @(posedge clk) 
+    always @(posedge clk_in) 
     begin
         ledo0 <=~led0;
         ledo1 <=~led1;
