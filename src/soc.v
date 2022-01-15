@@ -45,7 +45,7 @@ module soc (
     BUS_ready_o <= BUS_ready;
     BUS_RW_o    <= BUS_RW;
     end
-    //output [31:0] BUS_addr, BUS_data;
+    //output [31:0] BUS_addr, BUS_data;1
     //output BUS_req, BUS_ready, BUS_RW;
     //output [7:0] DMA, grant;
 
