@@ -235,7 +235,7 @@ control_unit CU_0 (
     StoreMask,LoadMask,B_HW,LoadSign,NotAlign,
     AluFunc,ExeSelect,AllowOverflow,
     M_TargetReg,M_M2Reg,M_RegWrite, E_TargetReg_out, E_M2Reg,E_RegWrite,
-    E_AluOut, M_AluOut, M_MemOut ,
+    M_AluOut, 
     M_MemAddr, M_MemWrite &~M_canceled, ID_canceled, EXE_canceled, Mem_canceled,
     I_cache_ready,D_cache_ready,
     CPU_stall,stall_IF_ID,

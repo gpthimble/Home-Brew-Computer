@@ -22,7 +22,7 @@ module control_unit(
     AluFunc,ExeSelect,AllowOverflow ,
     //signals for data forward
     M_TargetReg,M_m2reg,M_RegWrite,E_TargetReg,E_m2reg,E_RegWrite,
-    E_AluOut,M_AluOut,M_MemOut,
+    M_AluOut,
     //signal for detecting self-modify code
     M_MemAddr, M_MemWrite,ID_canceled,EXE_canceled,Mem_canceled,
     //control signals for pipeline control
@@ -90,7 +90,7 @@ module control_unit(
     input  [ 4:0] M_TargetReg,E_TargetReg;
 
     //This three signals are the data output in different stage.
-    input  [31:0] E_AluOut,M_AluOut,M_MemOut;
+    input  [31:0] M_AluOut;
 
     //-------------------------For self-modify code------------------------------
     input [31:0] M_MemAddr;
