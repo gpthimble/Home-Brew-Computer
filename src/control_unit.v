@@ -530,15 +530,27 @@ module control_unit(
     //twice, so there should be a cancel signal to abandon the current instruction. 
     //A read after write hazard happens when the last instruction is a load instruction,
     //and the followed instruction use the target register of the previous load 
-    //instruction. ID stage can spot this hazard by compare the EXE stage's situation. 
-    //E_RegWrite and E_m2reg in EXE stage are high means that there's a load instruction
-    //in EXE stage now, and if the target of this instruction (E_TargetReg) is the same
-    //as one of the operand (rs or rt) of the current instruction, Stall_RAW is HIGH,
-    //The instruction fetch is paused for one clock cycle. 
-    //The update of upc is also stopped. 
-    wire Stall_RAW = E_RegWrite & E_m2reg & (E_TargetReg!=0) & ~EXE_canceled
-                        &(need_rs & (E_TargetReg==rs)| need_rt & (E_TargetReg==rt));
-    
+    //instruction. Or the followed instruction used the targeted register of the last
+    //instruction as its source. 
+    //ID stage can spot this hazard by compare the EXE and MEM stage's situations. 
+    //Situation 1:
+    //  "E_RegWrite" in EXE stage are high means that there's a instruction will write 
+    //  register file in EXE stage now, and if the source of current instruction is as
+    //  same as the target of the instruction in EXE stage (E_TargetReg == rs or rt), 
+    //  "Stall_RAW" is HIGH, and the ID and IF stage will stall for one cycle.
+    //Situation 2:
+    //  If there's a Load instruction in MEM stage (M_m2reg is high), and the target of
+    //  this instruction is the same one of the source register of the current instruction
+    //  (M_TargetReg == rs or rt), "Stall_RAW" is HIGH, and the ID and IF stage will 
+    //  stall for one cycle.
+    //If IF and ID stage Stalled by RAW hazard, the update of upc is also stopped. 
+
+    wire Stall_RAW = (E_RegWrite & ~EXE_canceled &  (E_TargetReg!=0) &
+                        (need_rs & (E_TargetReg==rs)| need_rt & (E_TargetReg==rt))) |
+                     (M_m2reg & ~Mem_canceled & (M_TargetReg != 0) &
+                        (need_rs & (M_TargetReg==rs)| need_rt & (M_TargetReg==rt)));
+
+
     //We have two ban signal at ID stage to avoid logic loop, ban_ID_RAW and ban_ID_EXC.
     //ban_ID_RAW has lower priority, it can't mask out the Stall_RAW but ban_ID_EXC can.
     //When a RAW hazard happens, Stall_RAW and Stall_ID_IF will be HIGH, so the IF and 
@@ -549,36 +561,22 @@ module control_unit(
     reg [31:0] regA, regB;
     //data forward for rs
     always @(*) begin
-        //case 1：current instruction's first operand is the same as the target register 
-        //of the EXE stage, and the EXE stage is not a load instruction, the pipeline
-        //doesn't need to stop. 
-        if (need_rs & E_RegWrite & (E_TargetReg!=0) & (E_TargetReg == rs) & ~E_m2reg & ~EXE_canceled)
-            regA = E_AluOut;
-        //case 2: current instruction's first operand is the same as the target register
-        //of the MEM stage, and the MEM stage is not a load instruction, the pipeline
-        //doesn't need to stop. 
-        else if (need_rs & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rs) & ~M_m2reg & ~Mem_canceled)
+        //current instruction's first operand is the same as the target register 
+        //of the MEM stage, and the Mem stage is not a load instruction, the Pipeline has
+        //already stalled for 1 cycle, for Situation 1 described above.
+        if (need_rs & M_RegWrite & (M_TargetReg!=0) & (M_TargetReg == rs) & ~E_m2reg & ~Mem_canceled)
             regA = M_AluOut;
-        //case 3: current instruction's first operand is the same as the target register
-        //of the last instruction, and the last instruction is a load instruction.
-        //As mentioned above, the IF and ID stage have been stopped for one clock cycle,
-        //after the stop, the following if statement can become true, and the the memory
-        //read is done, the data can be cast on the current instruction in ID stage. 
-        else if (need_rs & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rs) & M_m2reg & ~Mem_canceled)
-            regA = M_MemOut;
-        //case 0: default situation, there's no data forward. 
+        //For other situations, if there is no RAW hazard, no bypass needed.
+        //If the pipeline has stalled for two cycles for situation 2 described above, or
+        //the RAW hazard happened between ID and WB stage, the bypass is in the regfile.
         else regA = qa;
     end 
 
     //data forward for rt
     always @(*) begin
         //Since it is similar to rs, the comments are omitted here. 
-        if (need_rt & E_RegWrite & (E_TargetReg !=0) & (E_TargetReg == rt) & ~E_m2reg & ~EXE_canceled)
-            regB =E_AluOut;
-        else if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & ~M_m2reg & ~Mem_canceled)
-            regB = M_AluOut;
-        else if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & M_m2reg & ~Mem_canceled)
-            regB =M_MemOut;
+        if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & ~M_m2reg & ~Mem_canceled)
+            regB =M_AluOut;
         else regB = qb;
     end
 
