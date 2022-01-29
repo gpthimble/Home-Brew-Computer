@@ -23,6 +23,9 @@ module mmu (
 
     //clear signal
     clr,
+    
+    //stall signal
+    stall,
 );
 
 //This parameter determined the size of the page
@@ -52,6 +55,8 @@ input clk;
 
 input clr;
 
+input stall;
+
 //register virtual page number, physical page number and if the mmu is on
 reg [PAGE_NUM_WIDTH-1 :0] vpage_reg, ppage_reg;
 reg mmu_en_reg;
@@ -62,7 +67,7 @@ always @(posedge clk) begin
         ppage_reg <= 0;
         mmu_en_reg <= 0;
     end
-    else if (mmu_update) begin
+    else if (mmu_update & ~stall) begin
         vpage_reg <= vpage_in;
         ppage_reg <= ppage_in;
         mmu_en_reg <= mmu_en;
@@ -76,10 +81,10 @@ wire [PAGE_NUM_WIDTH-1 : 0] vpage = mmu_update ? vpage_in : vpage_reg;
 wire [PAGE_NUM_WIDTH-1 : 0] ppage = mmu_update ? ppage_in : ppage_reg; 
 
 //generate the mmu error signal
-assign mmu_error_o = (vaddr_in [31: 32-PAGE_NUM_WIDTH] == vpage ) ? 0:1;
+assign mmu_error_o =(en & ~(vaddr_in [31: 32-PAGE_NUM_WIDTH] == vpage ))? 1:0;
 
 //do the address translation
-assign paddr_o = {ppage,vaddr_in[31-PAGE_NUM_WIDTH : 0]};
+assign paddr_o = en ? {ppage,vaddr_in[31-PAGE_NUM_WIDTH : 0]} : vaddr_in;
 
 
 endmodule

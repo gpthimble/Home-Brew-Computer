@@ -78,8 +78,8 @@ module cpu (
     //instruction read out from the cache. 
     wire [31:0] I_cache_out;
 
-    //PC register is the address register inside the cache. 
-    wire [31:0] PC;
+    //IF_PC register is the address register inside the cache. 
+    reg [31:0] IF_PC;
     //next_PC is determined in CU
     wire [31:0] next_PC;
 
@@ -169,19 +169,79 @@ module cpu (
     //WB stage
     wire[31:0] W_RegDate_in;
 
+//--------------------IA (Instruction Address) stage------------------------
+//Address translation and branch predictor are implemented here
+    //stall signal for IA stage is as same as the IF stage
+    wire stall_IA = CPU_stall | stall_IF_ID;
+
+    //static branch predictor, 
+    //which always predicts that the branch will not happen. 
+    assign BP_target = IF_PC+4;
+
+    //use mmu for address translation
+    //determin the size of page
+    parameter PAGE_NUM_WIDTH = 20;
+    
+    //These two signals come from the control unit. CU set these signals
+    //when there're exceptions or interrupts. 
+    wire mmu_en, mmu_update;
+
+    //These two vector come from the control registers, they can be modified
+    //by mtc0 instruction. 
+    wire [PAGE_NUM_WIDTH - 1 : 0] vpage_in_I, ppage_in_I;
+
+    //This is the mmu error exception signal for fetching instructions
+    wire mmu_error_I;
+
+    //This is the translated physical address for instruction. 
+    wire [31:0] paddr_I;
+
+    //Address input of IA_PC needs special treatment when clear signal is 
+    //active. When clear is active, the input of IA_PC should be zero, this
+    //makes the CPU run from address zero when clr. 
+    reg clr_reg;
+    always @(posedge clk)
+    begin
+        clr_reg <= clr;
+    end
+
+    wire [31:0] next_PC_in = clr_reg & ~clr ? 32'b0 : next_PC;
+
+    
+    //mmu mmu_I (mmu_en, mmu_update,next_PC,vpage_in_I,ppage_in_I,mmu_error_I,
+    //       paddr_I,clk,clr );
+    
+    //for debugging, mmu is not enabled
+    mmu mmu_I (0, 0,next_PC_in,0,0,mmu_error_I,
+           paddr_I,clk,clr,CPU_stall );
+
+//-------------------registers between IA and IF stage----------------------
+    reg [31:0] IA_PC, IA_PC_p;
+    reg IA_mmu_err_I, IA_req;
+
+    always @(posedge clk) begin
+        if (clr) begin
+            IA_PC       <= 32'b0;
+            IA_PC_p     <= 32'b0;
+            IA_mmu_err_I  <=  1'b0;
+            IA_req      <=  1'b0;
+        end
+        else  begin
+            //next_PC is determined in CU
+            IA_PC       <= next_PC_in;
+            IA_PC_p     <= next_PC_in;
+            IA_mmu_err_I  <= mmu_error_I;
+            //If there's no mmu error, always request new instruction.
+            IA_req      <= ~mmu_error_I;
+        end
+    end
 
 //------------------------IF stage------------------------------------------
     //stall signal for IF stage is CPU_stall|stall_IF_ID
     wire stall_IF = CPU_stall | stall_IF_ID;
-    //static branch predictor, always predicts that the branch will not happen. 
-    assign BP_target = PC+4;
 
-    //Address input of I cache needs special treatment when clear signal is 
-    //active. When clear is active, the input of I cache should be zero, this
-    //makes the CPU run from address zero when clr. 
-    wire [31:0] next_PC_in = clr ? 32'b0 : next_PC;
 
-    wire  IF_misaligned = PC[0] | PC[1];
+    wire  IF_misaligned = IF_PC[0] | IF_PC[1];
 
     assign exc_IF = IF_misaligned ;
 
@@ -193,11 +253,26 @@ module cpu (
             IF_cause = 3'b000;
     end
 
+    //IF_PC is the internel registers in the IF stage, since IF stage could
+    //cost multi cycles. If there's a cache hit, IF stage cost only 1 cycle.
+    reg IF_canceled;
+    always @(posedge clk) begin
+        if (clr) begin
+            IF_PC <= 32'b0;
+            IF_canceled <= 1'b0;
+        end
+        else if (~(stall_IF)) begin
+            IF_PC <= IA_PC;
+            IF_canceled <= ~IA_req;
+        end
 
+    end
     //Instantiate the instruction cache
-    cache I_cache(stall_IF, next_PC_in, 32'b0, 1'b1, 1'b0, 1'b0,
+    //physical address is transfered into the I cache.
+    cache I_cache(stall_IF, IA_PC_p, 32'b0, IA_req&~ban_IF, 1'b0, 1'b0,
                     I_cache_out, I_cache_ready,
-                    PC,
+    //address register in the cache is  not used out of the cache.
+                    ,
                     BUS_addr,BUS_data,BUS_req_I,BUS_RW,BUS_grant_I,BUS_ready,
                     ban_IF,
                     clr,
@@ -216,9 +291,9 @@ module cpu (
                 instruction <= 32'b0;
             end
         else if (~(stall_IF_ID|CPU_stall)) begin
-                ID_canceled <= ban_IF;
-                ID_PC       <= PC;
-                instruction <= ban_IF ? 32'b0 : I_cache_out;
+                ID_canceled <= ban_IF | IF_canceled ;
+                ID_PC       <= IF_PC;
+                instruction <= (ban_IF | IF_canceled)? 32'b0 : I_cache_out;
         end
     end
 //--------------------------------ID stage---------------------------------- 
@@ -243,7 +318,7 @@ control_unit CU_0 (
     i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
             i_bgtz,i_beq,i_bne,
     next_PC,
-    PC,ID_PC,E_PC,M_PC,
+    IF_PC,ID_PC,E_PC,M_PC,
     exc_IF,exc_EXE,exc_MEM,
     IF_cause,EXE_cause,MEM_cause,
     ban_IF,ban_ID,ban_EXE,ban_MEM,

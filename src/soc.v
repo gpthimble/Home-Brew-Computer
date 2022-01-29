@@ -32,7 +32,8 @@ module soc (
     input step_mode,step;
     //output [31:0] timer1,timer2,read;
     //output selected;
-    reg clr,clk;
+    reg clk;
+    reg clr=1;
     output  reg   DMA_0, DMA_1,grant_0, grant_1,BUS_req_o, BUS_ready_o,BUS_RW_o;
 
     always @ (posedge clk_in)
