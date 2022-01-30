@@ -1,11 +1,12 @@
 //module for dummy slave devices.
 module dummy_slave_fast( 
-    clk,address, data, request, ready_out, r_w
+    clk,address, data, request, ready_out, r_w,clr
 );
     input clk, r_w, request;
     input [31:0] address;
     inout [31:0] data;
     output ready_out;
+    input clr;
 
 //--------------------------    Module implementation  -------------------------
     //dummy memory
@@ -64,9 +65,18 @@ module dummy_slave_fast(
     //one dummy operation needs four cycles.
     always @(posedge clk)
     begin
+        if (clr)
+        begin
+            state <= 00;
+            ready <= 1'b0;
+            selected_reg<= 0;
+            r_w_reg <=0;
+            data_reg <=0;
+            addr_reg<=0;
+        end
         //If device is in idle state and selected, register address, r_w 
         //and data.
-        if ((state == 2'b00)& selected) begin
+        else if ((state == 2'b00)& selected) begin
             state <=  2'b01;
 
             //pull the ready line low.

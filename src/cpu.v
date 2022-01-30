@@ -176,7 +176,7 @@ module cpu (
 
     //static branch predictor, 
     //which always predicts that the branch will not happen. 
-    assign BP_target = IF_PC+4;
+    assign BP_target = IA_PC+4;
 
     //use mmu for address translation
     //determin the size of page
@@ -205,14 +205,14 @@ module cpu (
         clr_reg <= clr;
     end
 
-    wire [31:0] next_PC_in = clr_reg & ~clr ? 32'b0 : next_PC;
+//    wire [31:0] next_PC_in = clr_reg & ~clr ? 32'b0 : next_PC;
 
     
     //mmu mmu_I (mmu_en, mmu_update,next_PC,vpage_in_I,ppage_in_I,mmu_error_I,
     //       paddr_I,clk,clr );
     
     //for debugging, mmu is not enabled
-    mmu mmu_I (0, 0,next_PC_in,0,0,mmu_error_I,
+    mmu mmu_I (0, 0,next_PC,0,0,mmu_error_I,
            paddr_I,clk,clr,CPU_stall );
 
 //-------------------registers between IA and IF stage----------------------
@@ -226,10 +226,19 @@ module cpu (
             IA_mmu_err_I  <=  1'b0;
             IA_req      <=  1'b0;
         end
-        else  begin
+
+        //fetch the first instruction
+        //address of the first instruction can be defined here
+        else if (clr_reg & ~clr) begin
+            IA_PC           <= 32'b0;
+            IA_PC_p         <= 32'b0;
+            IA_mmu_err_I    <=  1'b0;
+            IA_req          <=  1'b1;
+        end
+        else  if (~stall_IA ) begin
             //next_PC is determined in CU
-            IA_PC       <= next_PC_in;
-            IA_PC_p     <= next_PC_in;
+            IA_PC       <= next_PC;
+            IA_PC_p     <= paddr_I;
             IA_mmu_err_I  <= mmu_error_I;
             //If there's no mmu error, always request new instruction.
             IA_req      <= ~mmu_error_I;
@@ -261,7 +270,7 @@ module cpu (
             IF_PC <= 32'b0;
             IF_canceled <= 1'b0;
         end
-        else if (~(stall_IF)) begin
+        else if (~(stall_IF| ban_IF)) begin
             IF_PC <= IA_PC;
             IF_canceled <= ~IA_req;
         end
@@ -272,6 +281,8 @@ module cpu (
     cache I_cache(stall_IF, IA_PC_p, 32'b0, IA_req&~ban_IF, 1'b0, 1'b0,
                     I_cache_out, I_cache_ready,
     //address register in the cache is  not used out of the cache.
+    //because address in this register is the physical address,
+    //but registered addresses in the pipeline should all be virtual address.
                     ,
                     BUS_addr,BUS_data,BUS_req_I,BUS_RW,BUS_grant_I,BUS_ready,
                     ban_IF,
@@ -291,9 +302,9 @@ module cpu (
                 instruction <= 32'b0;
             end
         else if (~(stall_IF_ID|CPU_stall)) begin
-                ID_canceled <= ban_IF | IF_canceled ;
+                ID_canceled <= ban_IF  ;
                 ID_PC       <= IF_PC;
-                instruction <= (ban_IF | IF_canceled)? 32'b0 : I_cache_out;
+                instruction <= (ban_IF )? 32'b0 : I_cache_out;
         end
     end
 //--------------------------------ID stage---------------------------------- 

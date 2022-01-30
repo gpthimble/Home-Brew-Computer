@@ -17,12 +17,13 @@
 
 
 module bus_control(
-    dma,grant,req,ready,clk
+    dma,grant,req,ready,clk,clr
 );
     input   [7:0] dma;
     input   ready, clk;
     output  [7:0] grant;
     output  req;
+    input clr;
 
 //--------------------------    Module implementation  -------------------------
 
@@ -33,6 +34,9 @@ module bus_control(
     reg state;
     always @(posedge clk)
     begin
+        if (clr)
+            state <=0;
+            grant_reg <=0;
         case (state)
 
         //Idle state, in this state, if has a req, jump to state busy
