@@ -1,7 +1,7 @@
 
 //uart_tx is a slave device which is connected to the bus
 module uart_tx(
-	clk,address, data, request, ready_out, r_w, TxD, TxD_ready, clk_step
+	clk,address, data, request, ready_out, r_w, TxD, TxD_ready, clk_step,clr
 );
     input clk, r_w, request;
     input [31:0] address;
@@ -11,6 +11,7 @@ module uart_tx(
 	output TxD_ready;
 	assign TxD_ready = ~TxD_busy;
 	input clk_step;
+	input clr;
 
     //address range
     reg [31:0] entry_start, entry_end;
@@ -26,7 +27,14 @@ module uart_tx(
 	reg [31:0] address_reg, data_reg;
 
 	always @(posedge clk_step) begin
-		if (~selected)
+		if(clr)
+		begin
+			address_reg <= 32'b0;
+			data_reg 	<= 32'b0;
+			r_w_reg 	<= 0;
+			request_reg <= 0;
+		end
+		else if (~selected)
 		begin 
 		address_reg <= address;
 		data_reg 	<= data;
@@ -45,6 +53,8 @@ module uart_tx(
 
 	reg async_selected;
 	always @(posedge clk) begin
+		if (clr)
+			async_selected <= 0;
 		if (selected)
 			async_selected <= 0;
 		else
@@ -73,7 +83,13 @@ module uart_tx(
     
     always @(posedge clk)
     begin
-        if (tick >= 50)
+		if (clr)
+		begin
+			tick <= 0;
+            timer1 <= 0;
+			timer2 <= 0;
+		end
+        else if (tick >= 50)
         begin
             tick <= 0;
             timer1 <= timer1 +1;
@@ -325,3 +341,6 @@ endmodule
 
 
 ////////////////////////////////////////////////////////
+
+
+//test the new developing branch.

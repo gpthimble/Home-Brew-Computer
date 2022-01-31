@@ -32,7 +32,8 @@ module soc (
     input step_mode,step;
     //output [31:0] timer1,timer2,read;
     //output selected;
-    reg clr,clk;
+    reg clk;
+    reg clr;
     output  reg   DMA_0, DMA_1,grant_0, grant_1,BUS_req_o, BUS_ready_o,BUS_RW_o;
 
     always @ (posedge clk_in)
@@ -60,7 +61,7 @@ module soc (
     wire [7:0] DMA, grant;
 
     cpu cpu0(BUS_addr,BUS_data,BUS_RW,BUS_ready,DMA[0],DMA[1],grant[0],
-                grant[1],int_in, int_ack, int_num, clr, clk,
+                grant[1],0, int_ack, int_num, clr, clk,
                 //PC, next_PC,instruction_o,I_cache_ready,
                 //ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
                 //da,db,imm,
@@ -68,19 +69,27 @@ module soc (
                 //M_PC,D_cache_dout_o,D_cache_ready,
                 //W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
                 );
-    bus_control bus_control0(DMA,grant,BUS_req, BUS_ready,clk);
+    bus_control bus_control0(DMA,grant,BUS_req, BUS_ready,clk,clr);
     //dummy_slave ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
     //dummy_slave_mid ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
-    dummy_slave_fast ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
-    uart_tx tx_0 (clk_in, {2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW, TxD, TxD_ready, clk);
+    dummy_slave_fast ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW,clr);
+    uart_tx tx_0 (clk_in, {2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW, TxD, TxD_ready, clk,clr);
 
     //timer timer0 (clk,{2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW
     //                //,timer1,timer2,read,selected
     //                );
 
+    //logic for generating clr signal,if once release the button,generate few cycles 
+    //of clr.
+    reg power_on =1;
+    always @(posedge clk ) begin
+        power_on <=0;
+        
+    end
+
     always@ (posedge clk)
     begin
-        clr <= ~clr_in;
+        clr <= ~clr_in |power_on;
     end
 
     //add step mode

@@ -17,12 +17,13 @@
 
 
 module bus_control(
-    dma,grant,req,ready,clk
+    dma,grant,req,ready,clk, clr
 );
     input   [7:0] dma;
     input   ready, clk;
     output  [7:0] grant;
     output  req;
+    input   clr;
 
 //--------------------------    Module implementation  -------------------------
 
