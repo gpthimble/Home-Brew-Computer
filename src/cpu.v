@@ -213,6 +213,9 @@ parameter START_ADDR = 32'b0;
     wire [31:0] v_addr_i_in;
     assign v_addr_i_in = clr_reg & ~clr ? START_ADDR : next_PC;
 
+    wire [31:0] p_addr_i_in;
+    assign p_addr_i_in = clr_reg & ~clr ? START_ADDR : paddr_I;
+
 
     //implement PC
     reg IF_mmu_error_I, IF_req;
@@ -227,13 +230,13 @@ parameter START_ADDR = 32'b0;
         //fetch the first instruction
         //address of the first instruction can be defined here
         else if (clr_reg & ~clr) begin
-            PC           <= 32'b0;
+            PC           <= START_ADDR;
             IF_mmu_error_I    <=  1'b0;
             IF_req          <=  1'b1;
         end
         else  if (~stall_IF ) begin
             //next_PC is determined in CU
-            PC       <= next_PC;
+            PC       <= v_addr_i_in;
             IF_mmu_error_I  <= mmu_error_I;
             //If there's no mmu error, always request new instruction.
             IF_req      <= ~mmu_error_I;
@@ -255,9 +258,13 @@ parameter START_ADDR = 32'b0;
 
 
     //Instantiate the instruction cache
-    cache I_cache(stall_IF, paddr_I, 32'b0, IF_req, 1'b0, 1'b0,
+    cache I_cache(stall_IF, p_addr_i_in, 32'b0, ~mmu_error_I, 1'b0, 1'b0,
                     I_cache_out, I_cache_ready,
-                    PC,
+                    //don't need the internel address in cache, since this
+                    //register register the physical address, but we need
+                    //virtual address inside the pipeline.
+                    //PC
+                    ,
                     BUS_addr,BUS_data,BUS_req_I,BUS_RW,BUS_grant_I,BUS_ready,
                     ban_IF,
                     clr,
@@ -278,7 +285,7 @@ parameter START_ADDR = 32'b0;
         else if (~(stall_IF_ID|CPU_stall)) begin
                 ID_canceled <= ban_IF;
                 ID_PC       <= PC;
-                instruction <= ban_IF | req ? 32'b0 : I_cache_out;
+                instruction <= ban_IF | ~IF_req ? 32'b0 : I_cache_out;
         end
     end
 //--------------------------------ID stage---------------------------------- 
