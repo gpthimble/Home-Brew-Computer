@@ -33,6 +33,10 @@ module cpu (
 //
 //assign D_cache_dout_o =M_MemOut;
 //######################## Interface description ###########################
+
+//Initial address when power up.
+parameter START_ADDR = 32'b0;
+
 //------------------------ interface to the bus -----------------------------
     //32-bit address BUS
     inout [31:0] BUS_addr;
@@ -79,7 +83,7 @@ module cpu (
     wire [31:0] I_cache_out;
 
     //PC register is the address register inside the cache. 
-    wire [31:0] PC;
+    reg [31:0] PC;
     //next_PC is determined in CU
     wire [31:0] next_PC;
 
@@ -176,10 +180,66 @@ module cpu (
     //static branch predictor, always predicts that the branch will not happen. 
     assign BP_target = PC+4;
 
-    //Address input of I cache needs special treatment when clear signal is 
-    //active. When clear is active, the input of I cache should be zero, this
+    //use mmu for address translation
+    //determin the size of page
+    parameter PAGE_NUM_WIDTH = 20;
+    
+    //These two signals come from the control unit. CU set these signals
+    //when there're exceptions or interrupts. 
+    wire mmu_en, mmu_update;
+
+    //These two vector come from the control registers, they can be modified
+    //by mtc0 instruction. 
+    wire [PAGE_NUM_WIDTH - 1 : 0] vpage_in_I, ppage_in_I;
+
+    //This is the mmu error exception signal for fetching instructions
+    wire mmu_error_I;
+
+    //This is the translated physical address for instruction. 
+    wire [31:0] paddr_I;
+    //connect mmu
+    //for debugging, mmu is not enabled
+    mmu mmu_I (0, 0,v_addr_i_in,0,0,mmu_error_I,paddr_I,clk,clr,CPU_stall );
+
+    //Address input of PC needs special treatment when clear signal is 
+    //active. When clear is active, the input of IA_PC should be zero, this
     //makes the CPU run from address zero when clr. 
-    wire [31:0] next_PC_in = clr ? 32'b0 : next_PC;
+    reg clr_reg;
+    always @(posedge clk)
+    begin
+        clr_reg <= clr;
+    end
+
+    wire [31:0] v_addr_i_in;
+    assign v_addr_i_in = clr_reg & ~clr ? START_ADDR : next_PC;
+
+
+    //implement PC
+    reg IF_mmu_error_I, IF_req;
+
+    always @(posedge clk) begin
+        if (clr) begin
+            PC       <= 32'b0;
+            IF_mmu_error_I  <=  1'b0;
+            IF_req      <=  1'b0;
+        end
+
+        //fetch the first instruction
+        //address of the first instruction can be defined here
+        else if (clr_reg & ~clr) begin
+            PC           <= 32'b0;
+            IF_mmu_error_I    <=  1'b0;
+            IF_req          <=  1'b1;
+        end
+        else  if (~stall_IF ) begin
+            //next_PC is determined in CU
+            PC       <= next_PC;
+            IF_mmu_error_I  <= mmu_error_I;
+            //If there's no mmu error, always request new instruction.
+            IF_req      <= ~mmu_error_I;
+        end
+    end
+    
 
     wire  IF_misaligned = PC[0] | PC[1];
 
@@ -195,7 +255,7 @@ module cpu (
 
 
     //Instantiate the instruction cache
-    cache I_cache(stall_IF, next_PC_in, 32'b0, 1'b1, 1'b0, 1'b0,
+    cache I_cache(stall_IF, paddr_I, 32'b0, IF_req, 1'b0, 1'b0,
                     I_cache_out, I_cache_ready,
                     PC,
                     BUS_addr,BUS_data,BUS_req_I,BUS_RW,BUS_grant_I,BUS_ready,
@@ -218,7 +278,7 @@ module cpu (
         else if (~(stall_IF_ID|CPU_stall)) begin
                 ID_canceled <= ban_IF;
                 ID_PC       <= PC;
-                instruction <= ban_IF ? 32'b0 : I_cache_out;
+                instruction <= ban_IF | req ? 32'b0 : I_cache_out;
         end
     end
 //--------------------------------ID stage---------------------------------- 

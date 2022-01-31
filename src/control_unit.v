@@ -263,7 +263,7 @@ module control_unit(
     //As mentioned above the width of this counter is variable.
     reg upc;
     //New instruction is fetched only when last instruction is done.
-    wire ins_done = (canceled | ban_ID_EXC) ? 1'b1 : upc == cycle;
+    wire ins_done = (canceled | ban_ID_EXC| clr) ? 1'b1 : upc == cycle;
     always @(posedge clk)
     begin
         if (clr)

@@ -168,7 +168,7 @@ parameter no_cache_end =32'hFFFFFFFC;
 localparam cache_lines = 2<< (INDEX -1);
 localparam tag_size = 32-2- INDEX;
 //default size of the cache is two 512 bytes (128 lines) set, total size is 1KB.
-parameter INDEX=2;
+parameter INDEX=1;
 parameter WIDTH=32;
 
 //------------------------------    FROM CPU  -----------------------------------
@@ -187,7 +187,7 @@ begin
         begin
             addr_reg <= 0;
             data_reg <= 0;  
-            CPU_req_reg <= CPU_req;
+            CPU_req_reg <= 0;
             CPU_RW_reg  <= 0;
             CPU_clr_reg <= 0;
         end
