@@ -61,7 +61,7 @@ module soc (
     wire [7:0] DMA, grant;
 
     cpu cpu0(BUS_addr,BUS_data,BUS_RW,BUS_ready,DMA[0],DMA[1],grant[0],
-                grant[1],int_in, int_ack, int_num, clr, clk,
+                grant[1],0, int_ack, int_num, clr, clk,
                 //PC, next_PC,instruction_o,I_cache_ready,
                 //ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
                 //da,db,imm,

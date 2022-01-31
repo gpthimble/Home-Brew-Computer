@@ -216,6 +216,16 @@ parameter START_ADDR = 32'b0;
     wire [31:0] p_addr_i_in;
     assign p_addr_i_in = clr_reg & ~clr ? START_ADDR : paddr_I;
 
+    reg I_cache_req;
+    always @(*) begin
+        if (clr)
+            I_cache_req = 1'b0;
+        else if (clr_reg & ~clr )
+            I_cache_req = 1'b1;
+        else 
+            I_cache_req = ~mmu_error_I;
+    end
+
 
     //implement PC
     reg IF_mmu_error_I, IF_req;
@@ -258,7 +268,7 @@ parameter START_ADDR = 32'b0;
 
 
     //Instantiate the instruction cache
-    cache I_cache(stall_IF, p_addr_i_in, 32'b0, ~mmu_error_I, 1'b0, 1'b0,
+    cache I_cache(stall_IF, p_addr_i_in, 32'b0, I_cache_req, 1'b0, 1'b0,
                     I_cache_out, I_cache_ready,
                     //don't need the internel address in cache, since this
                     //register register the physical address, but we need
