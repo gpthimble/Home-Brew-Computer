@@ -46,7 +46,7 @@ module regfile(
     output reg [31:0] data_out_a,data_out_b;
 
     //--------------------------    Module implementation  -------------------------
-    reg   [31:0] register [1:31];
+    reg   [31:0] register [1:31] ;
 
     //Register 0 is always 0. Implemented by compare the address with zero.
     always @ (*)
@@ -75,16 +75,9 @@ module regfile(
     integer i;
     always @(posedge clk)
     begin
-
-    //clear signal is synchronized and effective when HIGH.
-      if (clr== 1) begin
-
-        //clear is implemented by for loop.
-        for (i = 1; i<32; i=i+1)
-          register[i]<=0;
     
     //when w_en is HIGH, write value in the register selected by address of write agent.
-      end else if (w_number!=0 && w_en)
+     if (w_number!=0 && w_en)
         register[w_number] <= data_in;
     end
 endmodule // regfile

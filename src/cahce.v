@@ -168,7 +168,7 @@ parameter no_cache_end =32'hFFFFFFFC;
 localparam cache_lines = 2<< (INDEX -1);
 localparam tag_size = 32-2- INDEX;
 //default size of the cache is two 512 bytes (128 lines) set, total size is 1KB.
-parameter INDEX=1;
+parameter INDEX=10;
 parameter WIDTH=32;
 
 //------------------------------    FROM CPU  -----------------------------------
@@ -181,17 +181,18 @@ parameter WIDTH=32;
 //between EXE and MEM stage.
 reg [31:0] addr_reg, data_reg;
 reg CPU_req_reg, CPU_RW_reg, CPU_clr_reg;
+initial begin
+    begin
+        addr_reg <= 0;
+        data_reg <= 0;  
+        CPU_req_reg <= 0;
+        CPU_RW_reg  <= 0;
+        CPU_clr_reg <= 0;
+    end
+end
 always @ (posedge clk)
 begin
-    if (clr)
-        begin
-            addr_reg <= 0;
-            data_reg <= 0;  
-            CPU_req_reg <= 0;
-            CPU_RW_reg  <= 0;
-            CPU_clr_reg <= 0;
-        end
-    else if (~ CPU_stall) 
+    if (~ CPU_stall) 
         begin
             addr_reg <= CPU_addr;   
             data_reg <= CPU_data;
@@ -221,11 +222,12 @@ wire  cache_clr  = CPU_stall ? CPU_clr_reg : CPU_clr;
 //NO_CACHE is HIGH if requested address is in no cache range.
 //This signal is a registered value. Use a registered value to avoid logic loop.
 reg NO_CACHE;
+initial begin
+    NO_CACHE <= 0;
+end
 always@(posedge clk)
 begin
-    if (clr) 
-        NO_CACHE <= 0;
-    else if (~ CPU_stall) 
+     if (~ CPU_stall) 
         NO_CACHE <= (addr <= no_cache_end) && (addr >=no_cache_start);
 end
 
@@ -247,15 +249,14 @@ reg [31:0] BUS_addr_reg;
 //whether the currently monitored bus request is issued by itself. The bus request 
 //issued by itself does not need to be monitored. 
 reg BUS_RW_reg, BUS_grant_reg;
-always @ (posedge clk)
+initial 
 begin
-    if (clr)
-        begin
-            BUS_addr_reg <= 32'b0;
-            BUS_RW_reg   <= 0;
-            BUS_grant_reg<= 0;
-        end
-    else    
+        BUS_addr_reg <= 32'b0;
+        BUS_RW_reg   <= 0;
+        BUS_grant_reg<= 0;
+end
+always @ (posedge clk)
+begin   
         begin
             BUS_addr_reg <= BUS_addr;
             BUS_RW_reg   <= BUS_RW;
@@ -335,11 +336,12 @@ reg [cache_lines-1:0] VALID_A, VALID_B;
 //registered value.
 //valid bits for group A.
 reg VALID_A_out ;
+initial begin
+    VALID_A = 32'b0;
+end
 always @(posedge clk)
 begin
-    if (clr || cache_clr)
-        VALID_A = 32'b0;
-    else if (WE_A) 
+    if (WE_A) 
         VALID_A[index_reg] =1;
     else if (VALID_A_clr)
         VALID_A[index_sync_reg] =0;
@@ -353,11 +355,12 @@ end
 
 //valid bits for group B.
 reg VALID_B_out;
+initial begin
+    VALID_B = 32'b0;
+end
 always @(posedge clk)
 begin
-    if (clr || cache_clr)
-        VALID_B = 32'b0;
-    else if (WE_B) 
+    if (WE_B) 
         VALID_B[index_reg] =1;
     else if (VALID_B_clr)
         VALID_B[index_sync_reg] =0;
@@ -379,12 +382,15 @@ end
 //if cpu is stall by other reason while bus just completed the request, cache
 //hit signal is switch to the valid bit from bus ready signal.
 reg VALID_C;
+initial begin
+    VALID_C <= 0;
+end
 
 always @(posedge clk)
 begin
     //clear valid_c for every new request, since every request into no cache zone
     //should be cast to the bus, this provide the necessary cache miss signal.
-    if ((~CPU_stall) || clr )
+    if ((~CPU_stall) )
         VALID_C <= 0;
     else if (WE_C) 
         VALID_C <= 1;
@@ -477,12 +483,11 @@ assign BUS_req = BUS_req_reg;
 //To increase the max frequency, registered the BUS_req signal to reduce combination
 //logic level between cache and the BUS.
 reg BUS_req_reg;
+initial begin
+    BUS_req_reg <= 0;
+end
 always @(posedge clk)
 begin
-    if (clr)
-    BUS_req_reg <= 0;
-    else
-        begin
         //Request to the Bus is sent only when if there's not a write or read hit, and
         //if the request hasn't been canceled.
             if ( CPU_req_reg &(~cancel | req_sent) & ((~CPU_RW_reg & ~(ready_in | ready_reg)&~CACHE_HIT_R )
@@ -491,7 +496,6 @@ begin
         
             else 
                 BUS_req_reg <= 0;
-        end
 
 end
 
@@ -507,13 +511,14 @@ assign CACHE_HIT_W = (ready_in | ready_reg) & CPU_RW_reg;
 //To achieve this we use a register to indicate whether the request has been 
 //sent during this cycle.
 reg req_sent;
+initial begin
+    req_sent <=0;
+end
 always @(posedge clk)
 begin
-    if (clr) 
-        req_sent <=0;
     //req_sent resets when every new instruction is pre-fetched
     //req_sent is reset when a new request is coming or the request is done. 
-    else if (~CPU_stall|ready_in)
+    if (~CPU_stall|ready_in)
         req_sent <=0;
     //req_sent goes high when the cache request the bus. 
     else if (BUS_grant)

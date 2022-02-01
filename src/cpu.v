@@ -200,51 +200,26 @@ parameter START_ADDR = 32'b0;
     //connect mmu
     //for debugging, mmu is not enabled
     mmu mmu_I (0, 0,v_addr_i_in,0,0,mmu_error_I,paddr_I,clk,clr,CPU_stall );
+    wire [31:0] v_addr_i_in = power_on? START_ADDR : next_PC;
 
-    //Address input of PC needs special treatment when clear signal is 
-    //active. When clear is active, the input of IA_PC should be zero, this
-    //makes the CPU run from address zero when clr. 
-    reg clr_reg;
-    always @(posedge clk)
-    begin
-        clr_reg <= clr;
+    //power_on signal
+    reg power_on =1;
+    always @(posedge clk ) begin
+        power_on <=0;
+        
     end
-
-    wire [31:0] v_addr_i_in;
-    assign v_addr_i_in = clr_reg & ~clr ? START_ADDR : next_PC;
-
-    wire [31:0] p_addr_i_in;
-    assign p_addr_i_in = clr_reg & ~clr ? START_ADDR : paddr_I;
-
-    reg I_cache_req;
-    always @(*) begin
-        if (clr)
-            I_cache_req = 1'b0;
-        else if (clr_reg & ~clr )
-            I_cache_req = 1'b1;
-        else 
-            I_cache_req = ~mmu_error_I;
-    end
-
 
     //implement PC
     reg IF_mmu_error_I, IF_req;
+    initial begin
+        PC <= START_ADDR;
+        IF_mmu_error_I <= 0;
+        IF_req <= 1;
+    end
+
 
     always @(posedge clk) begin
-        if (clr) begin
-            PC       <= 32'b0;
-            IF_mmu_error_I  <=  1'b0;
-            IF_req      <=  1'b0;
-        end
-
-        //fetch the first instruction
-        //address of the first instruction can be defined here
-        else if (clr_reg & ~clr) begin
-            PC           <= START_ADDR;
-            IF_mmu_error_I    <=  1'b0;
-            IF_req          <=  1'b1;
-        end
-        else  if (~stall_IF ) begin
+      if (~stall_IF ) begin
             //next_PC is determined in CU
             PC       <= v_addr_i_in;
             IF_mmu_error_I  <= mmu_error_I;
@@ -268,7 +243,7 @@ parameter START_ADDR = 32'b0;
 
 
     //Instantiate the instruction cache
-    cache I_cache(stall_IF, p_addr_i_in, 32'b0, I_cache_req, 1'b0, 1'b0,
+    cache I_cache(stall_IF, paddr_I, 32'b0, ~mmu_error_I, 1'b0, 1'b0,
                     I_cache_out, I_cache_ready,
                     //don't need the internel address in cache, since this
                     //register register the physical address, but we need
@@ -286,13 +261,7 @@ parameter START_ADDR = 32'b0;
 //--------------------Register between IF and ID stage----------------------
     always @(posedge clk)
     begin
-        if (clr)
-            begin
-                ID_canceled <=  1'b0;
-                ID_PC       <= 32'b0;
-                instruction <= 32'b0;
-            end
-        else if (~(stall_IF_ID|CPU_stall)) begin
+        if (~(stall_IF_ID|CPU_stall)) begin
                 ID_canceled <= ban_IF;
                 ID_PC       <= PC;
                 instruction <= ban_IF | ~IF_req ? 32'b0 : I_cache_out;
@@ -335,52 +304,53 @@ begin
 end
 //assign int_ack = int_rec & ~CPU_stall;
 //---------------------register between ID and EXE stage---------------------
+    initial begin
+                E_canceled <=  1'b0;
+                E_PC       <= 32'b0;
+                E_da       <= 32'b0;
+                E_db       <= 32'b0;
+                E_imm      <= 32'b0;
+                E_TargetReg<=  5'b0;
+                E_RegWrite <=  1'b0;
+                E_M2Reg    <=  1'b0;
+                E_MemReq   <=  1'b0;
+                E_MemWrite <=  1'b0;
+                E_AluImm   <=  1'b0;
+                E_ShiftImm <=  1'b0;
+                E_link     <=  1'b0;
+                E_slt      <=  1'b0;
+                E_sign     <=  1'b0;
+                E_slt_sign <=  1'b0;
+                E_StoreMask<=  1'b0;
+                E_LoadMask <=  1'b0;
+                E_B_HW     <=  1'b0;
+                E_LoadSign <=  1'b0;
+                E_NotAlign <=  1'b0;
+                E_AluFunc  <=  4'b0;
+                E_AllowOverflow <= 1'b0;
+    
+                E_ins      <= 32'b0;
+                E_epc      <= 32'b0;
+                E_i_j      <=  1'b0;
+                E_i_jal    <=  1'b0;
+                E_i_jr     <=  1'b0;
+                E_i_jalr   <=  1'b0;
+                E_i_eret   <=  1'b0;
+                E_i_bgez   <=  1'b0;
+                E_i_bgezal <=  1'b0;
+                E_i_bltz   <=  1'b0;
+                E_i_bltzal <=  1'b0;
+                E_i_blez   <=  1'b0;
+                E_i_bgtz   <=  1'b0;
+                E_i_beq    <=  1'b0;
+                E_i_bne    <=  1'b0;
+                E_bpc      <= 32'b0;
+                E_no_br_pc <= 32'b0;
+    
+    end
+
     always @(posedge clk) begin
-        if (clr)begin
-            E_canceled <=  1'b0;
-            E_PC       <= 32'b0;
-            E_da       <= 32'b0;
-            E_db       <= 32'b0;
-            E_imm      <= 32'b0;
-            E_TargetReg<=  5'b0;
-            E_RegWrite <=  1'b0;
-            E_M2Reg    <=  1'b0;
-            E_MemReq   <=  1'b0;
-            E_MemWrite <=  1'b0;
-            E_AluImm   <=  1'b0;
-            E_ShiftImm <=  1'b0;
-            E_link     <=  1'b0;
-            E_slt      <=  1'b0;
-            E_sign     <=  1'b0;
-            E_slt_sign <=  1'b0;
-            E_StoreMask<=  1'b0;
-            E_LoadMask <=  1'b0;
-            E_B_HW     <=  1'b0;
-            E_LoadSign <=  1'b0;
-            E_NotAlign <=  1'b0;
-            E_AluFunc  <=  4'b0;
-            E_AllowOverflow <= 1'b0;
-
-            E_ins      <= 32'b0;
-            E_epc      <= 32'b0;
-            E_i_j      <=  1'b0;
-            E_i_jal    <=  1'b0;
-            E_i_jr     <=  1'b0;
-            E_i_jalr   <=  1'b0;
-            E_i_eret   <=  1'b0;
-            E_i_bgez   <=  1'b0;
-            E_i_bgezal <=  1'b0;
-            E_i_bltz   <=  1'b0;
-            E_i_bltzal <=  1'b0;
-            E_i_blez   <=  1'b0;
-            E_i_bgtz   <=  1'b0;
-            E_i_beq    <=  1'b0;
-            E_i_bne    <=  1'b0;
-            E_bpc      <= 32'b0;
-            E_no_br_pc <= 32'b0;
-
-        end
-        else if(~CPU_stall) begin
+     if(~CPU_stall) begin
             E_canceled <= ID_canceled | ban_ID;
             E_PC       <= ID_PC;
             E_da       <= da;
@@ -517,8 +487,8 @@ end
 assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
 
 //---------------------register between EXE and MEM stage--------------------
-always @(posedge clk) begin
-    if (clr) begin
+initial begin
+
         M_canceled <=  1'b0;
         M_PC       <= 32'b0;
         M_AluOut   <= 32'b0;
@@ -533,8 +503,10 @@ always @(posedge clk) begin
         M_NotAlign <=  1'b0;
         M_RegWrite <=  1'b0;
         M_M2Reg    <=  1'b0;
-    end
-    else if (~CPU_stall) begin
+
+end
+always @(posedge clk) begin
+    if (~CPU_stall) begin
         M_canceled <= E_canceled | ban_EXE;
         M_PC       <= E_PC;
         M_AluOut   <= E_AluOut;
@@ -649,16 +621,18 @@ always @(*) begin
 end
 
 //---------------------register between MEM and WB stage---------------------
-always @(posedge clk) begin
-    if (clr) begin
+
+initial begin
         W_canceled <=  1'b0;
         W_da       <= 32'b0;
         W_db       <= 32'b0;
         W_TargetReg<=  4'b0;
         W_M2Reg    <=  1'b0;
         W_RegWrite <=  1'b0;
-    end
-    else if (~CPU_stall) begin
+
+end
+always @(posedge clk) begin
+    if (~CPU_stall) begin
         W_canceled <= M_canceled | ban_MEM;
         W_da       <= M_AluOut;
         W_db       <= M_MemOut;

@@ -33,74 +33,67 @@ module soc (
     //output [31:0] timer1,timer2,read;
     //output selected;
     reg clk;
-    reg clr;
-    output  reg   DMA_0, DMA_1,grant_0, grant_1,BUS_req_o, BUS_ready_o,BUS_RW_o;
 
+    output  reg   DMA_0, DMA_1,grant_0, grant_1,BUS_req_o, BUS_ready_o,BUS_RW_o;
+    
     always @ (posedge clk_in)
     begin
-    DMA_0       <= DMA[0];
-    DMA_1       <= DMA[1];
-    grant_0     <= grant[0];
-    grant_1     <= grant[1];
-    BUS_req_o   <= BUS_req;
-    BUS_ready_o <= BUS_ready;
-    BUS_RW_o    <= BUS_RW;
+        DMA_0       <= DMA[0];
+        DMA_1       <= DMA[1];
+        grant_0     <= grant[0];
+        grant_1     <= grant[1];
+        BUS_req_o   <= BUS_req;
+        BUS_ready_o <= BUS_ready;
+        BUS_RW_o    <= BUS_RW;
     end
     //output [31:0] BUS_addr, BUS_data;1
     //output BUS_req, BUS_ready, BUS_RW;
     //output [7:0] DMA, grant;
-
+    
     //wire [31:0] PC,ID_PC,E_PC,M_PC, next_PC,instruction_o,D_cache_dout_o,W_RegDate_in
     //    ,E_AluOut,da,db,imm;
     //wire I_cache_ready,BP_miss,stall_IF_ID,W_canceled,W_RegWrite,
     //    W_M2Reg,D_cache_ready,CPU_stall,ban_IF,ban_ID,ban_EXE,ban_MEM;
     //wire [4:0] W_TargetReg;
-
+    
     wire [31:0] BUS_addr, BUS_data;
     wire BUS_req, BUS_ready, BUS_RW;
     wire [7:0] DMA, grant;
-
+    
     cpu cpu0(BUS_addr,BUS_data,BUS_RW,BUS_ready,DMA[0],DMA[1],grant[0],
-                grant[1],0, int_ack, int_num, clr, clk,
-                //PC, next_PC,instruction_o,I_cache_ready,
-                //ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
-                //da,db,imm,
-                //E_PC,E_AluOut,
-                //M_PC,D_cache_dout_o,D_cache_ready,
-                //W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
-                );
+    grant[1],0
+    , int_ack, int_num, clr, clk,
+    //PC, next_PC,instruction_o,I_cache_ready,
+    //ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
+    //da,db,imm,
+    //E_PC,E_AluOut,
+    //M_PC,D_cache_dout_o,D_cache_ready,
+    //W_RegDate_in,W_canceled,W_RegWrite,W_M2Reg,W_TargetReg
+    );
     bus_control bus_control0(DMA,grant,BUS_req, BUS_ready,clk,clr);
     //dummy_slave ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
     //dummy_slave_mid ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW);
     dummy_slave_fast ram0 (clk,{2'b00,BUS_addr[31:2]},BUS_data,BUS_req,BUS_ready,BUS_RW,clr);
     uart_tx tx_0 (clk_in, {2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW, TxD, TxD_ready, clk,clr);
-
+    assign BUS_addr = BUS_req? 32'bz : 32'b0;
+    
     //timer timer0 (clk,{2'b00,BUS_addr[31:2]}, BUS_data,BUS_req,BUS_ready,BUS_RW
     //                //,timer1,timer2,read,selected
     //                );
-
+    
     //logic for generating clr signal,if once release the button,generate few cycles 
     //of clr.
-    reg power_on =1;
-    always @(posedge clk ) begin
-        power_on <=0;
-        
-    end
 
-    always@ (posedge clk)
-    begin
-        clr <= ~clr_in |power_on;
-    end
-
+    
     //add step mode
-
+    
     reg step_mode_reg , step_reg;
     always @(posedge clk_in) begin
         step_mode_reg <= step_mode;
         step_reg  <= step;
     end
-
-
+    
+    
     always @(*)
     begin
         if (step_mode_reg)

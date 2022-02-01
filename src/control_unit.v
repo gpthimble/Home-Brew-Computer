@@ -264,11 +264,12 @@ module control_unit(
     reg upc;
     //New instruction is fetched only when last instruction is done.
     wire ins_done = (canceled | ban_ID_EXC| clr) ? 1'b1 : upc == cycle;
+    initial begin
+        upc <=0;
+    end
     always @(posedge clk)
     begin
-        if (clr)
-            upc <=0;
-        else begin
+
             if (ins_done &~Stall_RAW & ~CPU_stall) upc <= 0;
             //If there's a read after write hazard, the ID and IF stage must be wait
             //for one clock cycle, so does the update of upc. 
@@ -276,7 +277,6 @@ module control_unit(
             //when a multi-cycle instruction is not finished, we use Stall_ID_IF
             //to stall the ID and IF stage, but the upc should still update. 
             else if (~Stall_RAW & ~CPU_stall) upc <= upc +1'b1;
-        end
     end
 
 
@@ -429,12 +429,6 @@ module control_unit(
     integer i;
     always @(posedge clk)
     begin
-        if (clr)
-        begin
-            for (i = 0; i < 5; i = i + 1)
-                CP0_Reg[i] <= 0; 
-        end
-        else begin
             //write the STATUS register CP0_Reg[1]
                 //when there's an exception or interrupt
                 //This has a higher priority than mtc0. 
@@ -502,7 +496,6 @@ module control_unit(
                 else if (i_mtc0 & ~ban_ID & rd == 4) begin
                     CP0_Reg[4] <= regB;
                 end
-            end
     end
     wire [31:0] CP0_reg_out;
     assign CP0_reg_out = CP0_Reg[rd];

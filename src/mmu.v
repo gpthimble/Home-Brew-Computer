@@ -60,14 +60,14 @@ input stall;
 //register virtual page number, physical page number and if the mmu is on
 reg [PAGE_NUM_WIDTH-1 :0] vpage_reg, ppage_reg;
 reg mmu_en_reg;
+initial begin
+    vpage_reg <= 0;
+    ppage_reg <= 0;
+    mmu_en_reg <= 0;
+end
 
 always @(posedge clk) begin
-    if (clr) begin
-        vpage_reg <= 0;
-        ppage_reg <= 0;
-        mmu_en_reg <= 0;
-    end
-    else if (mmu_update & ~stall) begin
+    if (mmu_update & ~stall) begin
         vpage_reg <= vpage_in;
         ppage_reg <= ppage_in;
         mmu_en_reg <= mmu_en;

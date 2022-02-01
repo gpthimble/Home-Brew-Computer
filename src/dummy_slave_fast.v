@@ -63,20 +63,19 @@ module dummy_slave_fast(
 
     //the state machine implements the dummy wait cycles and ready signal.
     //one dummy operation needs four cycles.
+    initial begin
+        state <= 00;
+        ready <= 1'b0;
+        selected_reg<= 0;
+        r_w_reg <=0;
+        data_reg <=0;
+        addr_reg<=0;
+    end
     always @(posedge clk)
     begin
-        if (clr)
-        begin
-            state <= 00;
-            ready <= 1'b0;
-            selected_reg<= 0;
-            r_w_reg <=0;
-            data_reg <=0;
-            addr_reg<=0;
-        end
         //If device is in idle state and selected, register address, r_w 
         //and data.
-        else if ((state == 2'b00)& selected) begin
+       if ((state == 2'b00)& selected) begin
             state <=  2'b01;
 
             //pull the ready line low.

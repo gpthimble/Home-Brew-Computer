@@ -25,16 +25,14 @@ module uart_tx(
 	//registered all bus signals
 	reg r_w_reg, request_reg;
 	reg [31:0] address_reg, data_reg;
-
+	initial begin
+		address_reg <= 32'b0;
+		data_reg 	<= 32'b0;
+		r_w_reg 	<= 0;
+		request_reg <= 0;
+	end
 	always @(posedge clk_step) begin
-		if(clr)
-		begin
-			address_reg <= 32'b0;
-			data_reg 	<= 32'b0;
-			r_w_reg 	<= 0;
-			request_reg <= 0;
-		end
-		else if (~selected)
+	if (~selected)
 		begin 
 		address_reg <= address;
 		data_reg 	<= data;
@@ -53,8 +51,6 @@ module uart_tx(
 
 	reg async_selected;
 	always @(posedge clk) begin
-		if (clr)
-			async_selected <= 0;
 		if (selected)
 			async_selected <= 0;
 		else
@@ -83,13 +79,7 @@ module uart_tx(
     
     always @(posedge clk)
     begin
-		if (clr)
-		begin
-			tick <= 0;
-            timer1 <= 0;
-			timer2 <= 0;
-		end
-        else if (tick >= 50)
+	if (tick >= 50)
         begin
             tick <= 0;
             timer1 <= timer1 +1;
