@@ -168,7 +168,7 @@ parameter no_cache_end =32'hFFFFFFFC;
 localparam cache_lines = 2<< (INDEX -1);
 localparam tag_size = 32-2- INDEX;
 //default size of the cache is two 512 bytes (128 lines) set, total size is 1KB.
-parameter INDEX=10;
+parameter INDEX=8;
 parameter WIDTH=32;
 
 //------------------------------    FROM CPU  -----------------------------------
@@ -335,41 +335,56 @@ reg [cache_lines-1:0] VALID_A, VALID_B;
 //always effective at the next clock edge, write address should always be the
 //registered value.
 //valid bits for group A.
-reg VALID_A_out ;
-initial begin
-    VALID_A = 32'b0;
-end
-always @(posedge clk)
-begin
-    if (WE_A) 
-        VALID_A[index_reg] =1;
-    else if (VALID_A_clr)
-        VALID_A[index_sync_reg] =0;
-    //This is a registered read out. since the index can change according to the
-    //state of CPU, use a continuous read (assign statement) could cause a 
-    //combinational logic loop from CPU_stall to ready.
-    //If read and write at same time, get the new value.
-    VALID_A_out = VALID_A[index];
-end
 
+//reg VALID_A_out ;
+//initial begin
+//    VALID_A = 32'b0;
+//end
+//always @(posedge clk)
+//begin
+//    if (WE_A) 
+//        VALID_A[index_reg] =1;
+//    else if (VALID_A_clr)
+//        VALID_A[index_sync_reg] =0;
+//    //This is a registered read out. since the index can change according to the
+//    //state of CPU, use a continuous read (assign statement) could cause a 
+//    //combinational logic loop from CPU_stall to ready.
+//    //If read and write at same time, get the new value.
+//    VALID_A_out = VALID_A[index];
+//end
 
 //valid bits for group B.
-reg VALID_B_out;
-initial begin
-    VALID_B = 32'b0;
-end
-always @(posedge clk)
-begin
-    if (WE_B) 
-        VALID_B[index_reg] =1;
-    else if (VALID_B_clr)
-        VALID_B[index_sync_reg] =0;
-    //This is a registered read out. since the index can change according to the
-    //state of CPU, use a continuous read (assign statement) could cause a 
-    //combinational logic loop from CPU_stall to ready.
-    //If read and write at same time, get the new value.
-    VALID_B_out = VALID_B[index];
-end
+//reg VALID_B_out;
+//initial begin
+//    VALID_B = 32'b0;
+//end
+//always @(posedge clk)
+//begin
+//    if (WE_B) 
+//        VALID_B[index_reg] =1;
+//    else if (VALID_B_clr)
+//        VALID_B[index_sync_reg] =0;
+//    //This is a registered read out. since the index can change according to the
+//    //state of CPU, use a continuous read (assign statement) could cause a 
+//    //combinational logic loop from CPU_stall to ready.
+//    //If read and write at same time, get the new value.
+//    VALID_B_out = VALID_B[index];
+//end
+
+
+//use ram_2w1r for valid bits
+wire VALID_A_out;
+ram_2w1r valid_A(index_reg, index_sync_reg,index,
+                 1        , 0             , VALID_A_out,
+                 WE_A     , VALID_A_clr   , 1,
+                 clk);
+wire VALID_B_out;
+ram_2w1r valid_B(index_reg, index_sync_reg,index,
+                 1        , 0             , VALID_B_out,
+                 WE_B     , VALID_A_clr   , 1,
+                 clk);
+
+
 
 //Valid_c is for requests that address is in no cache range.
 //valid bit for group C is special. Purpose of group C is to make sure that

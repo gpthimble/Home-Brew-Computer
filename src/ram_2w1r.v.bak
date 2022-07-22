@@ -16,7 +16,7 @@ module ram_2w1r (
   //Data width in memory bits
   parameter WIDTH = 1;
   //address width; how many words stored in this memroy
-  parameter DEEPTH = 8;
+  parameter DEEPTH = 4;
 
   input [WIDTH-1 : 0] W_data_A, W_data_B;
   output [WIDTH-1 : 0] R_data_A;
@@ -112,10 +112,10 @@ module ram_2w1r (
   //If there are 2 continuous write request through different
   //port at the same address, the old value should be forwarded
   //since this value has not been written into the memory.
-  assign old_A = (W_en_A_R & W_addr_A_R == W_addr_B_R2 & W_en_B_R2)?
-         W_data_B_R2 : R_data_reg_B1;
-  assign old_B = (W_en_B_R & W_addr_B_R == W_addr_A_R2 & W_en_A_R2)?
-         W_data_A_R2 : R_data_reg_A1;
+  assign old_A = (W_en_A & W_addr_A == W_addr_B_R & W_en_B_R)?
+         W_data_B_R : R_data_reg_B1;
+  assign old_B = (W_en_B & W_addr_B == W_addr_A_R & W_en_A_R)?
+         W_data_A_R : R_data_reg_A1;
   assign new_A = old_A ^ W_data_A_R;
   assign new_B = old_B ^ W_data_B_R;
 
