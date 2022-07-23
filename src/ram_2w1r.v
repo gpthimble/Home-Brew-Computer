@@ -14,9 +14,9 @@ module ram_2w1r (
     clk
   );
   //Data width in memory bits
-  parameter WIDTH = 8;
+  parameter WIDTH = 1;
   //address width; how many words stored in this memroy
-  parameter DEEPTH = 1;
+  parameter DEEPTH = 8;
 
   input [WIDTH-1 : 0] W_data_A, W_data_B;
   output [WIDTH-1 : 0] R_data_A;
