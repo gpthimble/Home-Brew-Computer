@@ -16,7 +16,7 @@ module ram_2w1r (
   //Data width in memory bits
   parameter WIDTH = 8;
   //address width; how many words stored in this memroy
-  parameter DEEPTH = 8;
+  parameter DEEPTH = 1;
 
   input [WIDTH-1 : 0] W_data_A, W_data_B;
   output [WIDTH-1 : 0] R_data_A;
