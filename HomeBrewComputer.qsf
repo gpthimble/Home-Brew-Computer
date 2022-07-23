@@ -274,6 +274,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to grant_0
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to grant_1
 set_global_assignment -name ENABLE_SIGNALTAP ON
 set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
+set_global_assignment -name VECTOR_WAVEFORM_FILE testbench/ram_2w1r.vwf
 set_global_assignment -name VERILOG_FILE src/ram_2w1r.v
 set_global_assignment -name VERILOG_FILE src/mmu.v
 set_global_assignment -name MIF_FILE sim/programs/dhrystone2_1.mif
@@ -323,6 +324,7 @@ set_global_assignment -name VERILOG_FILE src/alu.v
 set_global_assignment -name VERILOG_FILE src/add_sub.v
 set_global_assignment -name QIP_FILE pll.qip
 set_global_assignment -name SIGNALTAP_FILE stp1.stp
+set_global_assignment -name VECTOR_WAVEFORM_FILE output_files/Waveform.vwf
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top

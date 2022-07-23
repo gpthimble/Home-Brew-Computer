@@ -14,7 +14,7 @@ module ram_2w1r (
     clk
   );
   //Data width in memory bits
-  parameter WIDTH = 1;
+  parameter WIDTH = 8;
   //address width; how many words stored in this memroy
   parameter DEEPTH = 8;
 
@@ -48,6 +48,37 @@ module ram_2w1r (
   reg [WIDTH-1 :0] mB1 [0: cache_lines -1];
   reg [WIDTH-1 :0] mB2 [0: cache_lines -1];
 
+  //Initialization all registers, without this the simulation won't work. 
+  //since the read or write operation both need old values. 
+  //These lines does not affect the synthesis process, because all registers will
+  //have default value zero. 
+  integer  i;
+  initial begin
+    for ( i=0 ; i <= cache_lines -1 ; i = i+1) begin
+        mA1[i] =0;
+        mB1[i] =0;
+        mA2[i] =0;
+        mB2[i] =0;
+    end
+    W_data_A_R =0;
+    W_data_B_R =0;
+    R_data_A_R =0;
+    W_en_A_R=0;
+    W_en_B_R=0;
+    R_en_A_R=0;
+    W_en_B_R2=0;
+    W_en_A_R2=0;
+    R_data_reg_A1=0;
+    R_data_reg_A2=0;
+    R_data_reg_B1=0;
+    R_data_reg_B2=0;
+    new_A_R=0; 
+    new_B_R=0;
+    read_A=0;
+    read_B=0;
+
+  end
+
   //since every write operation need reading as well, we need to registed
   //the write request, data and address and add some forwarding circuitry,
   //ensure that from the view out of this module the write complete in one
@@ -62,7 +93,7 @@ module ram_2w1r (
   reg W_en_B_R2,W_en_A_R2;
   //If two write ports write to the same address, request on port B will be
   //ignored.
-  wire ignored_W_B = W_addr_A == W_addr_B & W_en_B;
+  wire ignored_W_B = W_addr_A == W_addr_B & W_en_B & W_en_A;
 
   //update these registers when each port is enabled.
   always @(posedge clk)
