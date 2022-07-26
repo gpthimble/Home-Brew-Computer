@@ -168,7 +168,7 @@ parameter no_cache_end =32'hFFFFFFFC;
 localparam cache_lines = 2<< (INDEX -1);
 localparam tag_size = 32-2- INDEX;
 //default size of the cache is two 512 bytes (128 lines) set, total size is 1KB.
-parameter INDEX=8;
+parameter INDEX=9;
 parameter WIDTH=32;
 
 //------------------------------    FROM CPU  -----------------------------------
@@ -352,8 +352,8 @@ reg [cache_lines-1:0] VALID_A, VALID_B;
 //    //If read and write at same time, get the new value.
 //    VALID_A_out = VALID_A[index];
 //end
-
-//valid bits for group B.
+//
+////valid bits for group B.
 //reg VALID_B_out;
 //initial begin
 //    VALID_B = 32'b0;
@@ -374,12 +374,14 @@ reg [cache_lines-1:0] VALID_A, VALID_B;
 
 //use ram_2w1r for valid bits
 wire VALID_A_out;
-ram_2w1r valid_A(index_reg, index_sync_reg,index,
+ram_2w1r         #(.WIDTH(1), .DEEPTH(INDEX)) 
+                 valid_A(index_reg, index_sync_reg,index,
                  1        , 0             , VALID_A_out,
                  WE_A     , VALID_A_clr   , 1,
                  clk);
 wire VALID_B_out;
-ram_2w1r valid_B(index_reg, index_sync_reg,index,
+ram_2w1r        #(.WIDTH(1), .DEEPTH(INDEX))
+                valid_B (index_reg, index_sync_reg,index,
                  1        , 0             , VALID_B_out,
                  WE_B     , VALID_A_clr   , 1,
                  clk);

@@ -22,7 +22,8 @@ reg [WIDTH-1  :0] write_data_A, write_data_B          ;
 reg               write_EN_A,   write_EN_B  , read_EN ;   
 
 
-ram_2w1r ram (write_addr_A, write_addr_B, read_addr,
+ram_2w1r      #(.WIDTH(WIDTH), .DEEPTH(DEEPTH))
+              ram (write_addr_A, write_addr_B, read_addr,
               write_data_A, write_data_B, read_data,         
               write_EN_A,   write_EN_B , read_EN, 
              clk                                    );
