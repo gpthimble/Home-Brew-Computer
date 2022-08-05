@@ -20,9 +20,6 @@ module mmu (
 
     //clock input
     clk,
-
-    //clear signal
-    clr,
     
     //stall signal
     stall,
@@ -53,7 +50,6 @@ output mmu_error_o;
 //clock input
 input clk;
 
-input clr;
 
 input stall;
 
