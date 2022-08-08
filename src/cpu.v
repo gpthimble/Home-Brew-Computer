@@ -14,7 +14,7 @@ module cpu (
 
     //for debugging
     //PC, next_PC_o,instruction_o,I_cache_ready,
-    //ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
+    //ID_PC,BP_miss,CPU_stall,stall_IA_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
     //da,db,imm,
     //E_PC,E_AluOut,
     //M_PC,D_cache_dout_o,D_cache_ready,
@@ -24,7 +24,7 @@ module cpu (
 //for debugging
 //output [31:0] PC,ID_PC,E_PC,M_PC, next_PC_o,instruction_o,D_cache_dout_o,W_RegDate_in
 //        ,E_AluOut,da,db,imm;
-//output I_cache_ready,BP_miss,stall_IF_ID,W_canceled,W_RegWrite,
+//output I_cache_ready,BP_miss,stall_IA_IF_ID,W_canceled,W_RegWrite,
 //        W_M2Reg,D_cache_ready,CPU_stall,ban_IF,ban_ID,ban_EXE,ban_MEM;
 //output [4:0] W_TargetReg;
 //assign next_PC_o = next_PC_in;
@@ -33,8 +33,9 @@ module cpu (
 //assign D_cache_dout_o =M_MemOut;
 //######################## Interface description ###########################
 
-//Initial address when power up.
-parameter START_ADDR = 32'b0;
+//use mmu for address translation
+//determin the size of page
+parameter PAGE_NUM_WIDTH = 20;
 
 //------------------------ interface to the bus -----------------------------
     //32-bit address BUS
@@ -77,137 +78,177 @@ parameter START_ADDR = 32'b0;
 
 //######################## Module Implementation ###########################
 //-----------------------declare names--------------------------------------
+//all names that referrenced in different stages appears here
+    //BP stage
+        //mmu_en_CU is read from control registers
+            wire mmu_en_CU;
+        //next_PC is calculated in CU
+            wire [31:0] next_PC;
+        //BP_target is feed into the CU to generate next_PC
+            wire [31:0] BP_target;
 
     //Pipleline registers between BP and IA stage
-        reg IA_mmuEN;
-        reg [31:0] IA_PC;
+            reg IA_mmuEN;
+            reg [31:0] IA_PC;
+
+    //IA stage
+        //These two vector come from the control registers, they can be modified
+        //by mtc0 instruction. 
+            wire [PAGE_NUM_WIDTH - 1 : 0] vpage_in_I, ppage_in_I;
+        //calculated I cache request signal
+            wire Icache_req;
+        //ban signal from CU
+            wire ban_IA;
+        //This is the translated physical address for instruction. 
+        //This address is feed into the instruction cache
+            wire [31:0] paddr_I;
 
     //Pipeline registers between IA and IF stage
-        reg IF_canceled, IF_mmuEN;
-        reg [31:0] IF_PC;
-        reg [3:0]  IF_EXC;
+            reg IF_canceled, IF_mmuEN;
+            reg [31:0] IF_PC;
+            reg [3:0]  IF_EXC;
 
-    //instruction read out from the cache. 
-    wire [31:0] I_cache_out;
-
+    //IF stage
+        //ban signal from CU
+            wire ban_IF;
     //pipeline register between IF and ID stage
-    reg [31:0] instruction, ID_PC;
-    reg ID_canceled,ID_mmuEN;
-    reg [3:0]  ID_EXC;
+            reg [31:0] ID_instruction, ID_PC;
+            reg ID_canceled,ID_mmuEN;
+            reg [3:0]  ID_EXC;
 
-    //for the register file
-    //two read index
-    wire [4:0] rs,rt;
-    //two read data out
-    wire [31:0] qa,qb;
-    //write index
-    wire [4:0] reg_w_num;
-    //write data in
-    wire [31:0] reg_d_in;
-    //write enable from WB stage
-    wire reg_w_en;
+    //ID stage
+        //for the register file
+        //two read index
+            wire [4:0] rs,rt;
+        //two read data out
+            wire [31:0] qa,qb;
 
-    //for the control unit
-    //data output to next stage
-    wire [31:0] da,db,imm;
-    wire [4:0] TargetReg;
-    //control output to next stage
-    wire RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign;
-    wire StoreMask,LoadMask,B_HW,LoadSign,NotAlign;
-    wire [3:0] AluFunc;
-    wire [1:0] ExeSelect;
-    wire AllowOverflow;
-    //stall signal generated from CU
-    wire CPU_stall;
-    //stall signal for IF and ID stage generated from CU
-    wire stall_IF_ID;
-    //I cache ready signal
-    wire I_cache_ready;
-    //D cache ready signal
-    wire D_cache_ready;
-    //cancel signal from CU
-    wire ban_IF,ban_ID,ban_EXE,ban_MEM;
-    //exception signal from different stages
-    wire exc_IF, exc_EXE,exc_MEM;
-    //exception number 
-    reg [2:0] IF_cause,EXE_cause,MEM_cause;
-    //signals for branch predictor
-    wire BP_miss;
-    wire [31:0] epc,bpc,no_br_pc;
-    reg  [31:0] br_target;
-    wire i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
-            i_bgtz,i_beq,i_bne;
+        //for the control unit
+        //data output to next stage
+            wire [31:0] da,db,imm;
+            wire [4:0] TargetReg;
+        //control output to next stage
+            wire RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,
+                                        link,slt,sign,slt_sign;
+            wire StoreMask,LoadMask,B_HW,LoadSign,NotAlign;
+            wire [3:0] AluFunc;
+            wire [1:0] ExeSelect;
+            wire AllowOverflow;
+        //signal for mtc0 and mfc0 at EXC stage
+            wire i_mtc0, i_mfc0;
+            wire [4:0] rd;
+        //signal for multi-cycle instruction done
+            wire ins_done;
+        ////signal used for branch target calculation
+            //target PC for conditional branch when branch or not
+            wire [31:0] bpc,no_br_pc;
+            wire i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,
+                    i_bltzal,i_blez, i_bgtz,i_beq,i_bne;
+            wire rs_equal_0, rs_rt_equal, rs_less_than_0;
+        //syscall, unimp, eret is generated in CU
+        //these four kind of exception can not happen at the same time
+            wire syscall,unimp, not_allow;
+        //stall signal generated from CU
+            wire CPU_stall;
+        //stall signal for IF and ID stage generated from CU
+            wire stall_IA_IF_ID;
+        //I cache ready signal
+            wire I_cache_ready;
+        //D cache ready signal
+            wire D_cache_ready;
+        //cancel signal from CU
+            wire ban_ID;
+        //exception signal from different stages
+            wire exc_IF, exc_EXE,exc_MEM;
 
-    wire int_rec;
+        //interupt signal and vector
+            wire int_in;
+            wire [19:0] int_num;
+            wire int_rec;
 
     //pipeline registers between ID and EXE stage
-    reg E_canceled,E_mmuEN;
-    reg [31:0] E_da,E_db,E_imm, E_PC;
-    reg [4:0] E_TargetReg, E_EXC;
-    reg E_RegWrite,E_M2Reg,E_MemReq,E_MemWrite,E_AluImm,E_ShiftImm,E_link,E_slt,E_sign,E_slt_sign ,E_NotAlign;
-    reg E_StoreMask,E_LoadMask,E_B_HW,E_LoadSign;
-    reg [3:0] E_AluFunc;
-    reg [1:0] E_ExeSelect;
-    reg [31:0] E_ins, E_epc,E_bpc,E_no_br_pc;
-    reg E_AllowOverflow;
+            reg E_canceled,E_mmuEN;
+            reg [31:0] E_da,E_db,E_imm, E_PC;
+            reg [4:0] E_TargetReg, E_EXC;
+            reg E_RegWrite,E_M2Reg,E_MemReq,E_MemWrite,E_AluImm,
+                E_ShiftImm,E_link,E_slt,E_sign,E_slt_sign ,E_NotAlign;
+            reg E_StoreMask,E_LoadMask,E_B_HW,E_LoadSign;
+            reg [3:0] E_AluFunc;
+            reg [1:0] E_ExeSelect;
+            reg [31:0] E_ins,E_bpc,E_no_br_pc;
+            reg E_AllowOverflow;
 
-    reg E_i_j,E_i_jal,E_i_jr,E_i_jalr,E_i_eret,E_i_bgez,E_i_bgezal,
-            E_i_bltz,E_i_bltzal,E_i_blez,E_i_bgtz,E_i_beq,E_i_bne;
-
-    //EXE stage output
-    reg [31:0] E_AluOut;
-    wire [4:0] E_TargetReg_out;
-
+            reg E_i_j,E_i_jal,E_i_jr,E_i_jalr,E_i_eret,E_i_bgez,E_i_bgezal,
+                E_i_bltz,E_i_bltzal,E_i_blez,E_i_bgtz,E_i_beq,E_i_bne,E_ins_done;
+            reg E_rs_equal_0,E_rs_rt_equal,E_rs_less_than_0;
+            reg [4:0] E_rd; 
+            reg E_mtc0, E_mfc0;
+    
+    //EXE stage
+        //ban signal for EXE stage
+            wire ban_EXE;
     //Pipeline registers between EXE and EXC stage
-    reg EXC_canceled,EXC_mmuEN;
-    reg [ 3:0] EXC_EXC;
-    reg [31:0] EXC_PC,EXC_AluOut,EXC_db, EXC_BrTarget;
-    reg [ 4:0] EXC_TargetReg;
-    reg EXC_RegWrite,EXC_M2Reg,EXC_MemReq,EXC_MemWrite;
-    reg EXC_StoreMask,EXC_LoadMask,EXC_B_HW,EXC_LoadSign,EXC_NotAlign;
-    reg EXC_isBranch, EXC_VTarget, EXC_eret;
+            reg EXC_canceled,EXC_mmuEN;
+            reg [ 3:0] EXC_EXC;
+            reg [31:0] EXC_PC,EXC_AluOut,EXC_db, EXC_BrTarget;
+            reg [ 4:0] EXC_TargetReg;
+            reg EXC_RegWrite,EXC_M2Reg,EXC_MemReq,EXC_MemWrite;
+            reg EXC_StoreMask,EXC_LoadMask,EXC_B_HW,EXC_LoadSign,EXC_NotAlign;
+            reg EXC_isBranch, EXC_VTarget,EXC_BP_miss, EXC_eret,EXC_ins_done;
+            reg [4:0] EXC_rd;
+            reg EXC_mtc0, EXC_mfc0;
+        
+    //EXC stage
+        //These two vector come from the control registers, they can be modified
+        //by mtc0 instruction. 
+            wire [PAGE_NUM_WIDTH - 1 : 0] vpage_in_D, ppage_in_D;
+        //ban signal for EXC stage
+            wire  ban_EXC;
+        //This is the translated physical address for data. 
+        //This address is feed into the data cache
+            wire [31:0] paddr_D;
+        //for mtc0 and mfc0
+            wire[31:0] EXC_AluOut_mux,CP0_reg_out;
 
+        //SMC signal is generated here
+            reg EXC_SMC;
+        //ERET signal is generated here
+        //EXC_BP_miss is generated here
+        //Generate EXC_code and EXC signal, then feed them into CU
+            reg [3 : 0] EXC_code;
+            wire EXC;
+    
     //pipeline registers between EXC and MEM stage
-    reg M_canceled;
-    reg [31:0] M_AluOut, M_db, M_PC;
-    reg [4:0] M_TargetReg;
-    reg M_RegWrite,M_M2Reg,M_MemReq,M_MemWrite;
-    reg M_StoreMask,M_LoadMask,M_B_HW,M_LoadSign,M_NotAlign;
+            reg M_canceled;
+            reg [31:0] M_AluOut, M_db, M_PC;
+            reg [4:0] M_TargetReg;
+            reg M_RegWrite,M_M2Reg,M_MemReq,M_MemWrite;
+            reg M_StoreMask,M_LoadMask,M_B_HW,M_LoadSign,M_NotAlign;
 
     //MEM stage
-    wire[31:0] M_MemAddr,M_MemOut;
-
     //pipeline registers between MEM and WB stage
-    reg W_canceled;
-    reg [31:0] W_da, W_db;
-    reg [4:0] W_TargetReg;
-    reg W_M2Reg, W_RegWrite;
+            reg W_canceled;
+            reg [31:0] W_da, W_db;
+            reg [4:0] W_TargetReg;
+            reg W_M2Reg, W_RegWrite;
 
     //WB stage
-    wire[31:0] W_RegDate_in;
+            wire[31:0] W_RegDate_in;
 
 
 //------------------------BP stage------------------------------------------
 //This stage is for the branch predictor    
     //stall signal for BP stage
-    wire stall_BP = CPU_stall | stall_IF_ID;
-
-    //mmu_en_CU is from control registers
-    wire mmu_en_CU;
+    wire stall_BP = CPU_stall | stall_IA_IF_ID;
 
 
+    
     //Branch Predictor implemented here
-    //BP_target is feed into the CU to generate next_PC
-    wire [31:0] BP_target;
     //.................................
     //now is the simple static branch predictor
+    //BP_target is feed into the CU to generate next_PC
     assign BP_target = IA_PC + 4;
     //End of Branch Predictor
-
-
-    //select next_PC based on CU
-    wire [31:0] next_PC;
-
 
 //Pipeline registers between BP and IA stage
     initial begin
@@ -216,7 +257,9 @@ parameter START_ADDR = 32'b0;
     end
     always @(posedge clk) begin
         if (~stall_BP) begin
+            //mmu_en_CU is read from control registers
             IA_mmuEN    <= mmu_en_CU;
+            //next_PC is calculated in CU
             IA_PC       <= next_PC;
         end
     end
@@ -225,26 +268,20 @@ parameter START_ADDR = 32'b0;
 //------------------------IA stage------------------------------------------
 //This stage is for the instruction MMU
     //stall signal for IA stage
-    wire stall_IA = CPU_stall | stall_IF_ID;
+    wire stall_IA = CPU_stall | stall_IA_IF_ID;
     
-    //use mmu for address translation
-    //determin the size of page
-    parameter PAGE_NUM_WIDTH = 20;
-
     //These two vector come from the control registers, they can be modified
     //by mtc0 instruction. 
-    wire [PAGE_NUM_WIDTH - 1 : 0] vpage_in_I, ppage_in_I;
+    //wire [PAGE_NUM_WIDTH - 1 : 0] vpage_in_I, ppage_in_I;
     //This is the mmu error exception signal for fetching instructions
     wire mmu_error_I;
 
-    //This is the translated physical address for instruction. 
-    //This address is feed into the instruction cache
-    wire [31:0] paddr_I;
-
     //address alingn exc in IA stage
     wire  IA_misaligned = IA_PC[0] | IA_PC[1];
-
+    
     //connect mmu
+    //paddr_I is the translated physical address for instruction. 
+    //This address is feed into the instruction cache
     mmu mmu_I (IA_mmuEN, IA_mmuEN,IA_PC,vpage_in_I,
               ppage_in_I,mmu_error_I,paddr_I,clk,CPU_stall );
 
@@ -266,7 +303,7 @@ parameter START_ADDR = 32'b0;
     //reqest signal to I cache
     //when there's no error in IA stage and IA stage is not banned
     //request the I cache. 
-    wire Icache_req = ~IA_misaligned & ~mmu_error_I & ~ban_IA;
+    assign Icache_req = ~IA_misaligned & ~mmu_error_I & ~ban_IA;
 
 //Pipeline registers between IA and IF stage
     initial begin
@@ -286,12 +323,15 @@ parameter START_ADDR = 32'b0;
     end    
 
 //------------------------IF stage------------------------------------------
-    //stall signal for IF stage is CPU_stall|stall_IF_ID
-    wire stall_IF = CPU_stall | stall_IF_ID;
+    //stall signal for IF stage is CPU_stall|stall_IA_IF_ID
+    wire stall_IF = CPU_stall | stall_IA_IF_ID;
 
+    //instruction read out from the cache. 
+    wire [31:0] I_cache_out;
 
     //Instantiate the instruction cache
-    cache I_cache(stall_IF, paddr_I, 32'b0, Icache_req, 1'b0, 1'b0,
+    cahce I_cache(stall_IF, 
+                    paddr_I, 32'b0, Icache_req, 1'b0, 1'b0,
                     I_cache_out, I_cache_ready,
                     //don't need the internel address in cache, since this
                     //register register the physical address, but we need
@@ -312,7 +352,7 @@ parameter START_ADDR = 32'b0;
         ID_mmuEN    <=  1'b0;
         ID_PC       <= 32'b0;
         ID_EXC      <=  4'b0;
-        instruction <= 32'b0;
+        ID_instruction <= 32'b0;
     end
     always @(posedge clk)
     begin
@@ -322,7 +362,7 @@ parameter START_ADDR = 32'b0;
                 ID_PC       <= IF_PC;
                 //no new exc in IF stage, ues value in ID stage 
                 ID_EXC      <= IF_EXC;
-                instruction <= (ban_IF | IF_canceled | ~Icache_req) ? 
+                ID_instruction <= (ban_IF | IF_canceled | ~Icache_req) ? 
                                 32'b0 : I_cache_out;
         end
     end
@@ -334,46 +374,100 @@ regfile RegFile_0 (rs,rt,qa,qb,
 
 //instantiate the CU
 control_unit CU_0 (
-    instruction,ID_canceled, rs,rt, qa,qb,
-    da,db,imm,TargetReg,
-    RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign,
-    StoreMask,LoadMask,B_HW,LoadSign,NotAlign,
-    AluFunc,ExeSelect,AllowOverflow,
-    M_TargetReg,M_M2Reg,M_RegWrite, E_TargetReg_out, E_M2Reg,E_RegWrite,
-    M_AluOut, 
-    M_MemAddr, M_MemWrite &~M_canceled, ID_canceled, EXE_canceled, Mem_canceled,
-    I_cache_ready,D_cache_ready,
-    CPU_stall,stall_IF_ID,
-    BP_miss,epc,BP_target,br_target,bpc,no_br_pc,
-    i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
-            i_bgtz,i_beq,i_bne,
-    next_PC,
-    PC,ID_PC,E_PC,M_PC,
-    exc_IF,exc_EXE,exc_MEM,
-    IF_cause,EXE_cause,MEM_cause,
-    ban_IF,ban_ID,ban_EXE,ban_MEM,
-    int_num,int_in,int_rec,
-    clk,clr
+    //protected mode signals
+        .mmuEN(mmu_en_CU), 
+        .Vpage_I(vpage_in_I) , .Ppage_I(ppage_in_I), 
+        .Vpage_D(vpage_in_D), .Ppage_D(ppage_in_D),
+    //instruction from IF stage
+        .instruction(ID_instruction), .ID_canceled(ID_canceled),
+    //index outputs to register files
+        .rs(rs), .rt(rt),
+    //data input from register files
+        .qa(qa), .qb(qb),
+    //data output for next stage
+        .da(da), .db(db), .imm(imm), .TargetReg(TargetReg),
+    //output control signals for next stage
+        .RegWrite(RegWrite), .M2Reg(M2Reg), .MemReq(MemReq), 
+        .MemWrite(MemWrite), .AluImm(AluImm),
+        .ShiftImm(ShiftImm), .link(link), .slt(slt), 
+        .sign(sign), .slt_sign(slt_sign),
+        //for different load/store instructions
+        .StoreMask(StoreMask), .LoadMask(LoadMask), 
+        .B_HW(B_HW), .LoadSign(LoadSign), .NotAlign(NotAlign),
+        //for ALU
+        .AluFunc(AluFunc), .ExeSelect(ExeSelect), 
+        .AllowOverflow(AllowOverflow),
+        //signal for mtc0 and mfc0 at EXC stage
+        .i_mtc0(i_mtc0), .i_mfc0(i_mfc0), .rd(rd),
+        //signal for multi-cycle instruction done
+        .ins_done(ins_done),
+        //signal used for branch target calculation
+        .bpc(bpc), .no_br_pc(no_br_pc),
+        .i_j(i_j), .i_jal(i_jal), .i_jr(i_jr), .i_jalr(i_jalr), 
+        .i_eret(i_eret), .i_bgez(i_bgez),
+        .i_bgezal(i_bgezal), .i_bltz(i_bltz), .i_bltzal(i_bltzal), 
+        .i_blez(i_blez), .i_bgtz(i_bgtz), .i_beq(i_beq), .i_bne(i_bne),
+        .rs_equal_0(rs_equal_0), .rs_rt_equal(rs_rt_equal),
+        .rs_less_than_0(rs_less_than_0),
+        //ID stage exception outputs
+        .i_syscall(syscall), .i_unimp(unimp), .i_not_allow(not_allow),
+    //pipeline control
+        //input signals for data forward
+        .E_TargetReg(E_TargetReg), .E_m2reg(E_M2Reg), .E_RegWrite(E_RegWrite),
+        .EXC_TargetReg(EXC_TargetReg), .EXC_m2reg(EXC_M2Reg), .EXC_RegWrite(EXC_RegWrite),
+        .M_TargetReg(M_TargetReg), .M_m2reg(M_M2Reg), .M_RegWrite(M_RegWrite),
+        .EXC_AluOut(EXC_AluOut_mux), .M_AluOut(M_AluOut),   
+        //input canceled signals
+        .E_canceled(E_canceled), .EXC_canceled(EXC_canceled), 
+        .M_canceled(M_canceled),
+        //control signals for pipeline stall
+        //inputs
+        .I_cache_R(I_cache_ready), .D_cache_R(D_cache_ready),
+        //outputs
+        .CPU_stall(CPU_stall), .Stall_IA_IF_ID(stall_IA_IF_ID), 
+    //next PC is calculated within CU
+        .next_PC(next_PC),
+        //use these values as next PC in different situations
+        .BP_target(BP_target), .EXC_Br_target(EXC_BrTarget),
+    //for exception, interrupt and control registers
+        //ban signal output for different stages
+        .ban_IA(ban_IA), .ban_IF(ban_IF), .ban_ID(ban_ID),
+        .ban_EXE(ban_EXE), .ban_EXC(ban_EXC),
+        //PC in different stage
+        .ID_PC(ID_PC), .EXE_PC(E_PC), .EXC_PC(EXC_PC),
+        //exception input from different stages
+        .EXC_code(EXC_code), .EXC(EXC),
+        .EXC_BP_miss(EXC_BP_miss), .EXC_SMC(EXC_SMC), .EXC_ERET(EXC_eret),
+        //instruction done signal from EXC stage for exception interrupt control
+        .EXC_ins_done(EXC_ins_done),  
+        //signal from EXC stage for write request to control registers
+        .EXC_mtc0(EXC_mtc0), .EXC_rd(EXC_rd), 
+        .CP0_reg_in(EXC_AluOut_mux), .CP0_reg_out(CP0_reg_out),
+        //interrupt vector input from the interrupt controller
+        .int_num(int_num),
+        //interrupt input
+        .int_in(int_in),
+        //interrupt accept output 
+        .int_rec(int_rec),       
+    //clock input
+        .clk(clk)
+
 );
-   
+
     //determine the EXC type in 
     reg [3:0] ID_EXC_in;
     //syscall, unimp, eret is generated in CU
     //these four kind of exception can not happen at the same time
-    wire syscall,unimp, eret, not_allow;
+    //wire syscall,unimp, eret, not_allow;
     always @(*) begin
         //if there is exception in ID stage, store ID stage EXC cause
         if (syscall) 
             //4'b0011 is for syscall instruction
             //syscall instruction is treated as a spectial exception
             ID_EXC_in = 4'b0011;
-        else if (unimp)
-            //4'b0100 is for unimplemented instruction exception
-            ID_EXC_in = 4'b0100;
-        else if (eret)
-            //4'b0101 is for e_ret instruction
-            //e_ret instruction is treated as a spectial exception
-            ID_EXC_in = 4'b0101;
+        //else if (unimp)
+        //    //4'b0100 is for unimplemented instruction exception
+        //    ID_EXC_in = 4'b0100;
         else if (not_allow)
             //4'b0110 is for not allow instructions
             //This is used for the protected mode
@@ -383,11 +477,8 @@ control_unit CU_0 (
             ID_EXC_in = ID_EXC;
     end
 
+    //assign int_ack = int_rec & ~CPU_stall;
 
-
-
-
-//assign int_ack = int_rec & ~CPU_stall;
 //---------------------register between ID and EXE stage---------------------
     initial begin
                 E_canceled <=  1'b0;
@@ -417,7 +508,6 @@ control_unit CU_0 (
                 E_AllowOverflow <= 1'b0;
     
                 E_ins      <= 32'b0;
-                E_epc      <= 32'b0;
                 E_i_j      <=  1'b0;
                 E_i_jal    <=  1'b0;
                 E_i_jr     <=  1'b0;
@@ -433,7 +523,14 @@ control_unit CU_0 (
                 E_i_bne    <=  1'b0;
                 E_bpc      <= 32'b0;
                 E_no_br_pc <= 32'b0;
-    
+                E_rs_equal_0     <= 1'b0;
+                E_rs_rt_equal    <= 1'b0;
+                E_rs_less_than_0 <= 1'b0;
+                E_ins_done <=  1'b0;
+                E_rd       <=  1'b0;
+                E_mtc0   <=  1'b0;
+                E_mfc0   <=  1'b0;
+                
     end
 
     always @(posedge clk) begin
@@ -463,9 +560,8 @@ control_unit CU_0 (
             E_NotAlign <=  NotAlign;
             E_AluFunc  <= AluFunc  ;
             E_AllowOverflow <= AllowOverflow;
-
-            E_ins      <=  instruction;
-            E_epc      <=  epc;
+            
+            E_ins      <=  ID_instruction;
             E_i_j      <=  i_j     ;
             E_i_jal    <=  i_jal   ;
             E_i_jr     <=  i_jr    ;
@@ -481,13 +577,22 @@ control_unit CU_0 (
             E_i_bne    <=  i_bne   ;
             E_bpc      <= bpc;
             E_no_br_pc <= no_br_pc;
-            
-
+            E_rs_equal_0     <= rs_equal_0;
+            E_rs_rt_equal    <= rs_rt_equal;
+            E_rs_less_than_0 <= rs_less_than_0;
+            E_ins_done       <= ins_done;
+            E_rd       <=  rd;
+            E_mtc0     <=  i_mtc0  ;
+            E_mfc0     <=  i_mfc0  ;
    
         end
     end
 //-----------------------------EXE stage-------------------------------------
-//calculate branch target
+    //EXE stage output
+    reg [31:0] E_AluOut;
+    wire [4:0] E_TargetReg_out;
+
+    //calculate branch target
     //Jump target for J/Jal instruction. Different with the original MIPS32 instruction. 
     //This CPU don't have delay slot, so upper bit of the target is the corresponding
     //bits of the address of the branch instruction itself. 
@@ -497,27 +602,20 @@ control_unit CU_0 (
     //Target address for jump register instructions
     wire [31:0] rpc = E_da;
 
-
-    wire   rs_equal_0,rs_rt_equal,rs_less_than_0;
-    assign rs_equal_0 = (E_da ==  32'b0);
-    assign rs_rt_equal = (E_da == E_db);
-    assign rs_less_than_0 = E_da[31];
     //select the correct branch target
-
+    reg  [31:0] E_Br_target;
     always @(*) begin
          //unconditional branch instructions
-        if (E_i_j|E_i_jal)          br_target = jpc;
+        if (E_i_j|E_i_jal)          E_Br_target = jpc;
         //unconditional branch register instructions
-        else if (E_i_jr|E_i_jalr)   br_target = rpc;
-        //return from exception
-        else if (E_i_eret)        br_target = E_epc;
+        else if (E_i_jr|E_i_jalr)   E_Br_target = rpc;
         //conditional branch instructions
-        else if (((E_i_bgez|E_i_bgezal)&(~rs_less_than_0))|((E_i_bltz|E_i_bltzal)&rs_less_than_0)
-            |(E_i_blez&(rs_less_than_0|rs_equal_0))|(E_i_beq&rs_rt_equal)|(E_i_bne&(~rs_rt_equal))
-             |(E_i_bgtz&(~rs_less_than_0 & ~ rs_equal_0)))
-                                br_target = E_bpc;
+        else if (((E_i_bgez|E_i_bgezal)&(~E_rs_less_than_0))|((E_i_bltz|E_i_bltzal)&E_rs_less_than_0)
+            |(E_i_blez&(E_rs_less_than_0|E_rs_equal_0))|(E_i_beq&E_rs_rt_equal)|(E_i_bne&(~E_rs_rt_equal))
+             |(E_i_bgtz&(~E_rs_less_than_0 & ~ E_rs_equal_0)))
+                                E_Br_target = E_bpc;
         //normal target
-        else                    br_target = E_no_br_pc;
+        else                    E_Br_target = E_no_br_pc;
     
     end
 
@@ -535,8 +633,9 @@ control_unit CU_0 (
     wire V_target; 
     assign V_target = E_i_jr | E_i_jalr | E_i_eret;
 
-//generate BP_miss in EXC stage to increase frequency
-//assign BP_miss = is_branch ? (ID_PC != br_target) : 1'b0;
+    //generate BP_miss in EXC stage to increase frequency
+    wire E_BP_miss;
+    assign E_BP_miss = is_branch ? (ID_PC != E_Br_target) : 1'b0;
 
 
 wire [31:0] alu_in_A, alu_in_B, alu_result;
@@ -606,7 +705,12 @@ assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
         EXC_BrTarget <= 32'b0;
         EXC_isBranch <=  1'b0;
         EXC_VTarget  <=  1'b0;
+        EXC_BP_miss  <=  1'b0;
         EXC_eret     <=  1'b0;
+        EXC_ins_done <=  1'b0;
+        EXC_rd       <=  1'b0;
+        EXC_mtc0     <=  1'b0;
+        EXC_mfc0     <=  1'b0;
 
     end
     always @(posedge clk) begin
@@ -627,24 +731,50 @@ assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
         EXC_NotAlign <= E_NotAlign;
         EXC_RegWrite <= E_RegWrite;
         EXC_M2Reg    <= E_M2Reg;
-        EXC_BrTarget <= br_target;
+        EXC_BrTarget <= E_Br_target;
         EXC_isBranch <= is_branch;
+        EXC_BP_miss  <= E_BP_miss;
         EXC_VTarget  <= V_target;
         EXC_eret     <= E_i_eret;
-
-    end
+        EXC_ins_done <= E_ins_done;
+        EXC_rd       <= E_rd;
+        EXC_mtc0     <= E_mtc0;
+        EXC_mfc0     <= E_mfc0;
+        end
+    
     end
 //--------------------------------EXC and DA stage----------------------------------
 //This stage deal with all the exceptions, interrupts and data address translation
+//All changes to the processor will be applied at this stage, including writing to
+//control registers and dealling with exceptions or interrupts. 
+    
+    //Data MMU
+    //These two vector come from the control registers, they can be modified
+    //by mtc0 instruction. 
+    //wire [PAGE_NUM_WIDTH - 1 : 0] vpage_in_D, ppage_in_D;
 
+    //This is the mmu error exception signal for accessing memory
+    wire mmu_error_D;
+    
+    //connect mmu
+    //paddr_D is the translated physical address for data. 
+    //This address is feed into the data cache
+    mmu mmu_D (EXC_mmuEN, EXC_mmuEN, EXC_AluOut,vpage_in_D,
+    ppage_in_D, mmu_error_D, paddr_D, clk, CPU_stall);
+
+    //mfc0 instruction is done here
+    assign EXC_AluOut_mux = EXC_mfc0 ? CP0_reg_out : EXC_AluOut;
+    
     //Processing Exceptions
-    //EXC and DA stage can have BP_miss, SMC, Data address not aligned, D_MMU not hit
-    //Generate BP_miss
-    assign BP_miss = EXC_isBranch ? (EXE_PC != EXC_BrTarget) : 1'b0;
-
-    //Generate SMC
-    reg SMC;
-    wire write_mem = EXC_MemWrite & ~EXC_canceled;
+    //EXC and DA stage can have BP_miss, SMC, Data address not aligned, 
+    //D_MMU not hit, e_ret
+    
+    //Generate EXC_BP_miss
+ 
+    //Generate EXC_ERET
+    
+    //Generate EXC_SMC
+    wire write_mem = EXC_MemWrite;
     always @(*) begin
         //check EXE stage
         if (//there's a memory write instruction in EXC stage
@@ -653,7 +783,7 @@ assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
             & E_PC == EXC_AluOut & E_canceled
             //there's no context change
             & E_mmuEN == EXC_mmuEN) 
-                                            SMC = 1'b1;
+                                            EXC_SMC = 1'b1;
         //check ID stage
         else if (//there's a memory write instruction in EXC stage
             write_mem
@@ -662,7 +792,7 @@ assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
             //there's no contex change
             & ID_mmuEN == E_mmuEN == EXC_mmuEN
         ) 
-                                            SMC = 1'b1;
+                                            EXC_SMC = 1'b1;
         //check IF stage
         else if (//there's a memory write instruction in EXC stage
             write_mem
@@ -671,7 +801,7 @@ assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
             //there's no contex change
             & IF_mmuEN == ID_mmuEN == E_mmuEN == EXC_mmuEN
             )
-                                            SMC = 1'b1;
+                                            EXC_SMC = 1'b1;
         //check IA stage
         else if (//there's a memory write instruction in EXC stage
             write_mem
@@ -680,9 +810,9 @@ assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
             //there's no contex change
             & IA_mmuEN == IF_mmuEN == ID_mmuEN == E_mmuEN == EXC_mmuEN
             ) 
-                                            SMC = 1'b1;
+                                            EXC_SMC = 1'b1;
         else                                
-                                            SMC = 1'b0;
+                                            EXC_SMC = 1'b0;
 
     end
 
@@ -694,10 +824,24 @@ assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
                             ~(EXC_LoadMask | EXC_StoreMask|EXC_NotAlign) 
                             & (DA_offset[1] | DA_offset[0]))& EXC_MemReq;
     
-    //Data MMU
+    //Generate EXC_code and EXC signal, then feed them into CU
+    //CU will also need to know if there are SMC\BP miss\eret
+    always @(*) begin
+            //First deal with EXC stage exceptions
+            //address not aligned has highest priority
+            if (DA_misaligned)
+                EXC_code = 4'b1000;
+            //then deal with data mmu miss
+            else if (mmu_error_D)
+                EXC_code = 4'b1001;
+            //otherwise use exc code adopted from last stage
+            else 
+                EXC_code = EXC_EXC;
+    end
+    assign EXC = EXC_code == 4'b0000 ? 1'b0 : 1'b1;   
                             
 
-//---------------------register between EXE and MEM stage--------------------
+//---------------------register between EXC and MEM stage--------------------
 initial begin
 
         M_canceled <=  1'b0;
@@ -718,32 +862,36 @@ initial begin
 end
 always @(posedge clk) begin
     if (~CPU_stall) begin
-        M_canceled <= E_canceled | ban_EXE;
-        M_PC       <= E_PC;
-        M_AluOut   <= E_AluOut;
-        M_db       <= E_db;
-        M_TargetReg<= E_TargetReg_out;
-        M_MemReq   <= E_MemReq;
-        M_MemWrite <= E_MemWrite;
-        M_StoreMask<= E_StoreMask;
-        M_LoadMask <= E_LoadMask;
-        M_B_HW     <= E_B_HW;
-        M_LoadSign <= E_LoadSign;
-        M_NotAlign <= E_NotAlign;
-        M_RegWrite <= E_RegWrite;
-        M_M2Reg    <= E_M2Reg;
+        M_canceled <= EXC_canceled | ban_EXC;
+        M_PC       <= EXC_PC;
+        M_AluOut   <= EXC_AluOut_mux;
+        M_db       <= EXC_db;
+        M_TargetReg<= EXC_TargetReg;
+        M_MemReq   <= EXC_MemReq;
+        M_MemWrite <= EXC_MemWrite;
+        M_StoreMask<= EXC_StoreMask;
+        M_LoadMask <= EXC_LoadMask;
+        M_B_HW     <= EXC_B_HW;
+        M_LoadSign <= EXC_LoadSign;
+        M_NotAlign <= EXC_NotAlign;
+        M_RegWrite <= EXC_RegWrite;
+        M_M2Reg    <= EXC_M2Reg;
     end
 end
 
 //-----------------------------MEM stage-------------------------------------
 //instantiate D cache
 wire [31:0] D_cache_din,D_cache_dout;
+
+wire[31:0] M_MemAddr,M_MemOut;
 assign M_MemAddr = M_AluOut;
-cache D_cache (CPU_stall,E_AluOut,D_cache_din,E_MemReq & ~(E_canceled|ban_EXE),E_MemWrite,1'b0,
+cahce D_cache (CPU_stall,paddr_D,D_cache_din,
+                EXC_MemReq & ~(EXC_canceled|ban_EXC),
+                EXC_MemWrite,1'b0,
                 D_cache_dout,D_cache_ready,
                 ,
                 BUS_addr,BUS_data,BUS_req_D,BUS_RW,BUS_grant_D,BUS_ready,
-                ban_MEM,
+                1'b0,
                 clr,
                 clk
                 //,
@@ -794,7 +942,7 @@ end
 
 //shift and mask mechanism for store byte and half word instructions
 wire [31:0] StoreMask_in;
-assign StoreMask_in = (D_cache_dout & ~mask)|( (E_db<<shift) & mask);
+assign StoreMask_in = (D_cache_dout & ~mask)|( (EXC_db<<shift) & mask);
 //shift and mask mechanism for load byte and half word instructions
 wire [31:0] LoadMask_no_ext;
 assign LoadMask_no_ext = (D_cache_dout & mask) >> shift;
@@ -807,29 +955,9 @@ assign LoadMask_ext = M_B_HW ?
 wire [31:0] LoadMask_out;
 assign LoadMask_out = M_LoadSign ? LoadMask_ext : LoadMask_no_ext;
 //connect masked result to the cache
-assign D_cache_din = E_StoreMask ? StoreMask_in : E_db;
+assign D_cache_din = EXC_StoreMask ? StoreMask_in : EXC_db;
 //connect masked result to the next stage
 assign M_MemOut = M_LoadMask?LoadMask_out : D_cache_dout;
-
-//for MEM stage exceptions
-//Misaligned exceptions
-wire M_misaligned = (M_LoadMask | M_StoreMask|M_NotAlign) & M_B_HW & offset[0] |
-                    ~(M_LoadMask | M_StoreMask|M_NotAlign) & (offset[1] | offset[0]);
-//add other exceptions here
-//...
-//signal the exception to CU. 
-assign exc_MEM = M_misaligned & ~M_canceled & M_MemReq;
-//set the cause of exception
-always @(*) begin
-    if (M_misaligned) begin
-        MEM_cause = 3'b001;
-    end
-    //add other cause here
-    //...
-
-    else 
-        MEM_cause = 3'b000;
-end
 
 //---------------------register between MEM and WB stage---------------------
 
@@ -844,7 +972,7 @@ initial begin
 end
 always @(posedge clk) begin
     if (~CPU_stall) begin
-        W_canceled <= M_canceled | ban_MEM;
+        W_canceled <= M_canceled;
         W_da       <= M_AluOut;
         W_db       <= M_MemOut;
         W_TargetReg<= M_TargetReg;

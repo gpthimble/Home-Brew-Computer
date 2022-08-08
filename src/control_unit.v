@@ -3,98 +3,112 @@
 //              CU controls all the functional parts in CPU. 
 
 module control_unit(
+    //protected mode signals
+        mmuEN, Vpage_I, Ppage_I, Vpage_D, Ppage_D,
     //instruction from IF stage
     //op,rs,rt,rd,func, 
-    instruction, canceled,
+        instruction, ID_canceled,
     //output to register files
-    rs,rt,
+        rs,rt,
     //input from register files
-    qa,qb,
+        qa,qb,
 
     //data output for next stage
-    da,db,imm,TargetReg, 
+        da, db, imm, TargetReg, 
     
     //output control signals for next stage
-    RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign,
+        RegWrite,M2Reg,MemReq,MemWrite,AluImm,ShiftImm,link,slt,sign,slt_sign,
         //for different load/store instructions
-    StoreMask,LoadMask,B_HW,LoadSign, NotAlign,
+        StoreMask,LoadMask,B_HW,LoadSign, NotAlign,
         //for ALU
-    AluFunc,ExeSelect,AllowOverflow ,
-    //signals for data forward
-    M_TargetReg,M_m2reg,M_RegWrite,E_TargetReg,E_m2reg,E_RegWrite,
-    M_AluOut,
-    //signal for detecting self-modify code
-    M_MemAddr, M_MemWrite,ID_canceled,EXE_canceled,Mem_canceled,
-    //control signals for pipeline control
-    I_cache_R, D_cache_R,
-    CPU_stall, Stall_IF_ID, 
-    //signals for branch predictor
-    BP_miss,epc,BP_target,br_target,bpc,no_br_pc,
-    i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
-           i_bgtz,i_beq,i_bne,
-    //next PC is calculated within CU
-    next_PC,
-    //PC in different stage
-    PC, ID_PC,EXE_PC, MEM_PC,
-    //exception input from different stages
-    exc_IF, exc_EXE,exc_MEM,
-    //exception cause input from different stages
-    IF_cause,EXE_cause,MEM_cause,
-    //cancel signal from CU
-    ban_IF,ban_ID,ban_EXE,ban_MEM,
+        AluFunc,ExeSelect,AllowOverflow ,
+        //signal for mtc0 and mfc0 at EXC stage
+        i_mtc0,i_mfc0, rd,
+        //signal for multi-cycle instruction done
+        ins_done,
+        //signal used for branch target calculation
+        bpc,no_br_pc,
+        i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
+        i_bgtz,i_beq,i_bne,
+        rs_equal_0, rs_rt_equal, rs_less_than_0,
+        //ID stage exception outputs
+        i_syscall,i_unimp,i_not_allow,
 
-    //interrupt vector input from the interrupt controller
-    int_num,
-    //interrupt input
-    int_in,
-    //interrupt accept output 
-    int_rec,
+    //for Pipeline control
+        //input signals for data forward
+        E_TargetReg,   E_m2reg,   E_RegWrite,
+        EXC_TargetReg, EXC_m2reg, EXC_RegWrite,
+        M_TargetReg,   M_m2reg,   M_RegWrite,
+        EXC_AluOut,    M_AluOut,      
+        //Input canceled signals
+        E_canceled, EXC_canceled, M_canceled,
+        //control signals for pipeline stall
+        //inputs
+        I_cache_R, D_cache_R,
+        //outputs
+        CPU_stall, Stall_IA_IF_ID, 
+    //next PC is calculated within CU
+        next_PC,
+        //use these values as next PC in different situations
+        BP_target,EXC_Br_target,
+    //for exception and interrupt
+        //ban signal output for different stages
+        ban_IA, ban_IF, ban_ID, ban_EXE, ban_EXC,
+        //PC in different stage
+        ID_PC,EXE_PC,EXC_PC,
+        //exception input from different stages
+        EXC_code,EXC,
+        EXC_BP_miss, EXC_SMC, EXC_ERET,
+        //instruction done signal from EXC stage for exception interrupt control
+        EXC_ins_done,
+
+        //signal from EXC stage for write request to control registers
+        EXC_mtc0, EXC_rd, CP0_reg_in, CP0_reg_out,
+        //interrupt vector input from the interrupt controller
+        int_num,
+        //interrupt input
+        int_in,
+        //interrupt accept output 
+        int_rec,
     //clock input
-    clk,
-    //synchronize clear signal
-    clr
+        clk
 );
     //######################## Interface description ###########################
+    //protected mode flag output for IA stage
+    output mmuEN;
+    assign mmuEN = protected_mode;
+    //mmu update signals
+    parameter PAGE_NUM_WIDTH = 20;
+    output [PAGE_NUM_WIDTH-1: 0] Vpage_I, Ppage_I, Vpage_D, Ppage_D;
+    assign Vpage_I = CP0_Reg[5][PAGE_NUM_WIDTH-1: 0];
+    assign Ppage_I = CP0_Reg[6][PAGE_NUM_WIDTH-1: 0];
+    assign Vpage_D = CP0_Reg[7][PAGE_NUM_WIDTH-1: 0];
+    assign Ppage_D = CP0_Reg[8][PAGE_NUM_WIDTH-1: 0];
+
     //-------------------------Instruction from IF stage -----------------------
     //instruction input from IF stage
     //input [5:0] op, func;
     //input [4:0] rs, rt, rd;
-    input canceled;
     input [31:0] instruction;
+    input ID_canceled;
     //If the pre-fetched instruction has been canceled at IF stage, CU treats it
     //as a nop instruction. 
     wire [5:0] op =   instruction [31:26];
+    //output to register files
     output [4:0] rs ;
     assign rs = instruction [25:21];
     output [4:0] rt ;
     assign rt = instruction [20:16];
-    wire [4:0] rd =  instruction [15:11];
     wire [5:0] func = instruction [5:0];
-
-
+    
+    
     //--------------------Input from Register File------------------------------
     input [31:0] qa,qb;
-
+    
     //--------------------Data Output to Next Stage-----------------------------
     output [31:0] da,db,imm;
     output [4:0] TargetReg;
 
-    //--------------------------For data forward---------------------------------
-    //signals for data forward. They are used for solving data hazard.
-    //M_m2reg indicates there is a memory to register operation in the MEM stage
-    //M_RegWrite indicates there is a register write operation in the MEM stage
-    //E_m2reg and E_RegWrite are the same but for EXE stage.
-    input  M_m2reg,M_RegWrite,E_m2reg,E_RegWrite;
-
-    //This two signals tell CU target register number in register write operations
-    input  [ 4:0] M_TargetReg,E_TargetReg;
-
-    //This three signals are the data output in different stage.
-    input  [31:0] M_AluOut;
-
-    //-------------------------For self-modify code------------------------------
-    input [31:0] M_MemAddr;
-    input M_MemWrite,ID_canceled,EXE_canceled,Mem_canceled;
 
     //-------------------------Control Signals to next stage---------------------
     //These signals is the decoded signal for next stage driving different part
@@ -137,41 +151,84 @@ module control_unit(
     //               |0011  CLO  | 0111  NOR  | 1011  SRA  | 1111  DIVU |
     output reg [3:0] AluFunc;
     output AllowOverflow ;
+    //signals for mtc0 and mfc0 at EXC stage
+    output i_mtc0,i_mfc0;
+    //This vector is for mtc0 and mfc0 at EXC stage
+    output [4:0] rd;
+    assign rd =  instruction [15:11];
+    //signal for indicate multi-cycle instruction done
+    output ins_done;
+    
+    //signal used for branch target calculation
+    output [31:0] bpc,no_br_pc;
+    output i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
+            i_bgtz,i_beq,i_bne;
+    output   rs_equal_0,rs_rt_equal,rs_less_than_0;
+
+    //ID stage exception outputs
+    output i_syscall,i_unimp,i_not_allow;
+
     //------------------for pipeline control--------------------------------------
-    //next PC is calculated within the CU
-    output reg [31:0] next_PC;
+    //--------------------------For data forward---------------------------------
+    //signals for data forward. They are used for solving data hazard.
+    //M_m2reg indicates there is a memory to register operation in the MEM stage
+    //M_RegWrite indicates there is a register write operation in the MEM stage
+    //E_m2reg and E_RegWrite are the same but for EXE stage.
+    input  M_m2reg,M_RegWrite,E_m2reg,E_RegWrite,EXC_m2reg,EXC_RegWrite;
+
+    //These signals tell CU target register number in register write operations
+    input  [ 4:0] M_TargetReg,EXC_TargetReg,E_TargetReg;
+
+    //These signals are the data in different stages.
+    input  [31:0] EXC_AluOut,M_AluOut;
+    
+    //Canceled signals for data forward
+    input E_canceled, EXC_canceled, M_canceled;
     //cache ready inputs
     input I_cache_R, D_cache_R;
     //CPU_stall stalls cpu when cache is not ready
     output CPU_stall;
     assign CPU_stall = ~(I_cache_R & D_cache_R);
-    //Stall_IF_ID disable the write enable of PC and IR register. This signal is active when
+    //Stall_IA_IF_ID disable the write enable of PC and IR register. This signal is active when
     //we need to pause the instruction fetch while other stages still go, e.g. a read
     //after write data hazard.
-    output Stall_IF_ID;
-    //BP_miss is active when branch predictor missed.
-    //do_branch is active when a branch takes in place.
-    //These two signal output is for the branch predictor to generate there history table. 
-    input BP_miss;
-    output [31:0] epc,bpc,no_br_pc;
-    assign epc = CP0_Reg[3];
-    input [31:0] BP_target;
-    input [31:0] br_target;
+    output Stall_IA_IF_ID;
 
-    output i_j,i_jal,i_jr,i_jalr,i_eret,i_bgez,i_bgezal,i_bltz,i_bltzal,i_blez,
-            i_bgtz,i_beq,i_bne;
+    //next PC is calculated within CU
+    output reg [31:0] next_PC;
+    //next_PC in normal state
+    input [31:0] BP_target;
+    //next_PC in BP_miss
+    input [31:0] EXC_Br_target;
+
     //These signals abandon the instruction in each stage. Instruction should be abandoned
-    //when there's a pipe line event such as BP_miss, exception,etc.
-    output reg ban_IF,ban_EXE,ban_MEM;
-    output ban_ID;
+    //when there's a pipe line event such as EXC_BP_miss, exception,etc.
+    output  ban_IA,ban_IF,ban_ID,ban_EXE;
+    output reg ban_EXC;
+    assign ban_IA = ban_IA_IF_ID_EXE;
+    assign ban_IF = ban_IA_IF_ID_EXE;
+    assign ban_EXE = ban_IA_IF_ID_EXE;
 
     //PC register from different stages. These inputs are used for control the pipeline
     //when there's a branch, interrupt or exception. 
-    input [31:0] PC, ID_PC, EXE_PC, MEM_PC;
+    input [31:0] ID_PC, EXE_PC, EXC_PC;
 
-    //exceptions from different stages
-    input exc_IF, exc_EXE,exc_MEM;
-    input [2:0] IF_cause,EXE_cause,MEM_cause;
+    //signal from EXC stage for exception and  interrupt control
+    //exception input from EXC stages
+    input [3:0] EXC_code;
+    input EXC;
+    //bpmiss, SMC and Eret signal
+    input EXC_BP_miss;
+    input EXC_SMC;
+    input EXC_ERET;
+    //ins done from EXC stage for interrupt control
+    input EXC_ins_done;
+
+    //signal from EXC stage for write request to control registers
+    input EXC_mtc0;
+    input [4:0] EXC_rd;
+    input [31:0] CP0_reg_in;
+    output [31:0] CP0_reg_out;
 
     //for interrupt
     input int_in;
@@ -179,7 +236,7 @@ module control_unit(
     input [19:0] int_num;
 
     //-----------------for clock and synchronize clear------------------------------
-    input clk,clr;
+    input clk;
 
 
     //######################## Module Implementation ###########################
@@ -252,7 +309,14 @@ module control_unit(
     wire i_jal = (op==6'b000011) ? 1'b1:1'b0;
 
     //for instructions which are not implemented. 
-    wire i_unimp =0;
+    wire i_unimp =~(i_eret | i_mfc0 | i_mtc0 | i_syscall |i_sll | i_srl | 
+                    i_sra | i_sllv | i_srlv | i_srav | i_jr | i_jalr | i_add | 
+                    i_addu | i_sub | i_subu | i_and  | i_or | i_xor | i_nor | 
+                    i_slt | i_sltu);
+
+    wire protected_mode = CP0_Reg[1][1];
+    wire i_not_allow = protected_mode & (i_eret | i_mfc0 | i_mtc0);
+
     //------------------------Multi-cycle instructions----------------------------
     //cycle implies number of cycles for a instruction
     //The width of this signal is variable. For now the maximum is 2 clock cycles,
@@ -263,7 +327,7 @@ module control_unit(
     //As mentioned above the width of this counter is variable.
     reg upc;
     //New instruction is fetched only when last instruction is done.
-    wire ins_done = (canceled | ban_ID_EXC| clr) ? 1'b1 : upc == cycle;
+    wire ins_done = (ID_canceled | ban_ID_EXC) ? 1'b1 : upc == cycle;
     initial begin
         upc <=0;
     end
@@ -295,7 +359,7 @@ module control_unit(
 
     //Memory request signal is active when the instruction needs to access the memory,
     //This signal is used at MEM stage. If accessing the memory is not needed, MEM can
-    //be skipped based on this signal. 
+    //be skipped BASEd on this signal. 
     //Store byte and Store half-word request memory access at both two cycle.
     assign MemReq = (i_lb|i_lh|i_lw|i_lbu|i_lhu|i_sb|i_sh|i_sw) & ~ban_ID;
     
@@ -393,7 +457,7 @@ module control_unit(
     //sign extension controlled by sign signal. 
     wire e = sign & instruction[15];
     wire [15:0] ext16 = {16{e}};
-    assign imm = canceled ? 32'b0 : { ext16, instruction[15:0] };
+    assign imm = ID_canceled ? 32'b0 : { ext16, instruction[15:0] };
 
 
 
@@ -405,9 +469,9 @@ module control_unit(
     //       -----------------------------------------
     //       |            CAUSE     REGISTER          |
     //       ------------------------------------------
-    //       |31   |28   |25   |22   |19             0|
+    //       |31                     |3             0|
     //       -----------------------------------------
-    //       | IF  | ID  | EXE | MEM |  interrupt     |
+    //       |        interrupt      |      EXC      |
     //       -----------------------------------------
     //CP0_Reg[1] is Status Register, controls the interrupt mask. 
     //For now we use the lowest bit of this register for interrupt mask, other bit
@@ -415,9 +479,9 @@ module control_unit(
     //      -------------------------------------------
     //      |           STATUS   REGISTER             |
     //      -------------------------------------------
-    //      |31                             1|  0     |
+    //      |31              2|           1   |  0     |
     //      -------------------------------------------
-    //      |        reserved                |INT mask|
+    //      |    reserved     | protect mode  |INT mask|
     //      -------------------------------------------
     //CP0_Reg[2] is Base Register, stores the entry of the interrupt /exception
     //  service program. 
@@ -425,80 +489,100 @@ module control_unit(
     //This group of control registers is accessed by mfc0 and mtc0, and indexed
     //by the rd field of the instructions. 
     //CP0_REG[4] is the backup of STATUS register. 
-    reg [31:0] CP0_Reg[5];
+    //CP0_REG[5] stores the virtual page number for instruction MMU
+    //CP0_REG[6] stores the physical page number for instruction MMU
+    //CP0_REG[7] stores the virtual page number for data MMU
+    //CP0_REG[8] stores the physical page number for data MMU
+    reg [31:0] CP0_Reg[9];
+    
+    //Alies of control registers
+    wire [31:0] BASE;
+    assign BASE = CP0_Reg[2];
+    wire [31:0] STATUS;
+    assign STATUS = CP0_Reg[1];
+    wire [31:0] CAUSE;
+    assign CAUSE = CP0_Reg[0];
+    wire [31:0] STATUS_bak;
+    assign STATUS_bak = CP0_Reg[4];
+    wire [31:0] EPC;
+    assign EPC = CP0_Reg[3];
+
+
     integer i;
     always @(posedge clk)
     begin
+            //write the CAUSE register CP0_Reg[0]
+                //when there's an exception or interrupt
+                if (update_CAUSE_exc) begin
+                    CP0_Reg[0] <= CAUSE_exc_in;
+                end
+                //when there's a mtc0 instruction. 
+                else if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 0) 
+                begin
+                    CP0_Reg[0] <= CP0_reg_in;
+                end
             //write the STATUS register CP0_Reg[1]
                 //when there's an exception or interrupt
                 //This has a higher priority than mtc0. 
                 if (update_STATUS_exc) begin
                     CP0_Reg[1] <= STATUS_exc_in;
                 end 
-                //when there's an eret instruction. 
-                else if (i_eret & ~ban_ID) begin
-                //when there's an eret, status register recovers it's previous value
-                    CP0_Reg[1] <= CP0_Reg[4];
-                end
                 //when there's a mtc0 instruction. 
-                else if (i_mtc0 & ~ban_ID & rd == 1) begin
-                    CP0_Reg[1] <= regB;
+                else if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 1) 
+                begin
+                    CP0_Reg[1] <= CP0_reg_in;
                 end
-
-            //write the CAUSE register CP0_Reg[0]
-                //when there's an exception or interrupt
-                if (update_CAUSE_exc) begin
-                    CP0_Reg[0] <= CAUSE_exc_in;
+            //write the BASE register CP0_Reg[2]
+                //BASE register is not changed by exceptions or interrupts
+                //mtc0 instruction can change the value of it. 
+                if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 2) 
+                begin
+                    CP0_Reg[2] <= CP0_reg_in;
                 end
-                //when there's an eret instruction. 
-                else if (i_eret & ~ban_ID) begin
-                //when there's an eret, cause register is set to zeros. 
-                    CP0_Reg[0] <= 32'b0;
-                end
-                //when there's a mtc0 instruction. 
-                else if (i_mtc0 & ~ban_ID & rd == 0) begin
-                    CP0_Reg[0] <= regB;
-                end
-
             //write the EPC register CP0_Reg[3]
                 //when there's an exception or interrupt
                 if (update_EPC_exc) begin
                     CP0_Reg[3] <= EPC_exc_in;
                 end
-                //when there's an eret instruction. 
-                else if (i_eret & ~ban_ID) begin
-                //when there's an eret, EPC register is set to zeros.
-                    CP0_Reg[3] <= 32'b0;
-                end
                 //when there's mtc0 instruction. 
-                else if (i_mtc0 & ~ban_ID & rd == 3) begin  
-                    CP0_Reg[3] <= regB;
+                else if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 3) 
+                begin  
+                    CP0_Reg[3] <= CP0_reg_in;
                 end
-            
-            //write the BASE register CP0_Reg[2]
-            //BASE register is not changed by exceptions or interrupts
-            //mtc0 instruction can change the value of it. 
-                if (i_mtc0 & ~ban_ID & rd == 2) begin
-                    CP0_Reg[2] <= regB;
-                end
-
             //write the STATUS_bak register CP0_Reg[4]
                 //when there's an exception or interrupt. 
                 if (update_STATUS_exc) begin
                     CP0_Reg[4] <= STATUS_bak_in;
                 end
-                //when there's an eret instruction. 
-                else if (i_eret & ~ban_ID) begin
-                //when there's an eret, the STATUS_bak register is set to zeros. 
-                    CP0_Reg[4] <= 32'b0;
-                end
                 //when there's mtc0 instruction. 
-                else if (i_mtc0 & ~ban_ID & rd == 4) begin
-                    CP0_Reg[4] <= regB;
+                else if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 4) 
+                begin
+                    CP0_Reg[4] <= CP0_reg_in;
+                end
+            //following control registers is for I mmu and D mmu
+            //write CP0_Reg[5]
+                if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 5) 
+                begin
+                    CP0_Reg[5] <= CP0_reg_in;
+                end
+            //write CP0_Reg[6]
+                if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 6) 
+                begin
+                    CP0_Reg[6] <= CP0_reg_in;
+                end
+            //write CP0_Reg[7]
+                if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 7) 
+                begin
+                    CP0_Reg[7] <= CP0_reg_in;
+                end
+            //write CP0_Reg[8]
+                if (EXC_mtc0 & ~EXC_canceled & ~ban_EXC & EXC_rd == 8) 
+                begin
+                    CP0_Reg[8] <= CP0_reg_in;
                 end
     end
     wire [31:0] CP0_reg_out;
-    assign CP0_reg_out = CP0_Reg[rd];
+    assign CP0_reg_out = CP0_Reg[EXC_rd];
 
     //implement of mfc0 and mtc0
     //mtc0 is done in ID stage itself, The output of register file feed into 
@@ -506,7 +590,10 @@ module control_unit(
     //mfc0 is done at WB stage. rd as index, the output of CP0 register group is
     //selected by the I_MFC0; At EXE stage, the output of CP0 register add 
     //rs which is zero, then skip MEM stage, send to target register in WB stage. 
-    assign db = i_mfc0 &~ban_ID ? CP0_reg_out : regB;
+    //assign db = i_mfc0 &~ban_ID ? CP0_reg_out : regB;
+    
+    //now mfc0 and mtc0 is done at EXC stage
+    assign db = regB;
     assign da = regA;
 
     //------------------------Data Forward Logic--------------------------------
@@ -518,29 +605,39 @@ module control_unit(
                     |i_jal|i_jr|i_jalr) & ~ban_ID_EXC;
     
     // When there's a read after 
-    //write hazard, the IF and ID stage need to stop for one clock cycle to wait
-    //the data at the MEM stage. Current instruction in ID stage will be executed
-    //twice, so there should be a cancel signal to abandon the current instruction. 
+    //write hazard, the IA, IF and ID stage need to stop for one or two clock cycles to wait
+    //the data reach to the EXC or MEM stage. Current instruction in ID stage will be executed
+    //multiple times, so there should be a cancel signal to abandon the current instruction. 
     //A read after write hazard happens when the last instruction is a load instruction,
     //and the followed instruction use the target register of the previous load 
     //instruction. Or the followed instruction used the targeted register of the last
     //instruction as its source. 
-    //ID stage can spot this hazard by compare the EXE and MEM stage's situations. 
+    //ID stage can spot this hazard by compare the EXE, EXC and MEM stage's situations. 
     //Situation 1:
     //  "E_RegWrite" in EXE stage are high means that there's a instruction will write 
     //  register file in EXE stage now, and if the source of current instruction is as
     //  same as the target of the instruction in EXE stage (E_TargetReg == rs or rt), 
-    //  "Stall_RAW" is HIGH, and the ID and IF stage will stall for one cycle.
+    //  "Stall_RAW" is HIGH, and the IA, ID and IF stage will stall for one cycle.
     //Situation 2:
+    //  If there's a Load instruction in EXC stage (EXC_M2Reg is high), and the target of 
+    //  this instruction is the same one of the source register of the current instruction
+    //  (EXC_TargetReg == rs or rt), "Stall_RAW" is HIGH, and the ID and IF stage will
+    //  stall for one cycle.
+    //Situation 3:
     //  If there's a Load instruction in MEM stage (M_m2reg is high), and the target of
     //  this instruction is the same one of the source register of the current instruction
     //  (M_TargetReg == rs or rt), "Stall_RAW" is HIGH, and the ID and IF stage will 
     //  stall for one cycle.
     //If IF and ID stage Stalled by RAW hazard, the update of upc is also stopped. 
 
-    wire Stall_RAW = (E_RegWrite & ~EXE_canceled &  (E_TargetReg!=0) &
+    wire Stall_RAW =//situation 1
+                        (E_RegWrite & ~E_canceled &  (E_TargetReg!=0) &
                         (need_rs & (E_TargetReg==rs)| need_rt & (E_TargetReg==rt))) |
-                     (M_m2reg & ~Mem_canceled & (M_TargetReg != 0) &
+                    //situation 2
+                        (EXC_m2reg & ~EXC_canceled & (EXC_TargetReg != 0) &
+                        (need_rs & (EXC_TargetReg==rs)| need_rt & (EXC_TargetReg==rt)))|
+                    //situation 3
+                        (M_m2reg & ~M_canceled & (M_TargetReg != 0) &
                         (need_rs & (M_TargetReg==rs)| need_rt & (M_TargetReg==rt)));
 
 
@@ -554,10 +651,15 @@ module control_unit(
     reg [31:0] regA, regB;
     //data forward for rs
     always @(*) begin
+        //current instruction's first operand is the same as the target register
+        //of the EXC stage, and the EXC stage is not a load instruciton, the Pipeline
+        //has already stalled for 1 cycle, for Situation 1 described above. 
+        if (need_rs & EXC_RegWrite & (EXC_TargetReg!=0) & (EXC_TargetReg == rs) & ~EXC_m2reg & ~EXC_canceled)
+            regA = EXC_AluOut;
         //current instruction's first operand is the same as the target register 
         //of the MEM stage, and the Mem stage is not a load instruction, the Pipeline has
-        //already stalled for 1 cycle, for Situation 1 described above.
-        if (need_rs & M_RegWrite & (M_TargetReg!=0) & (M_TargetReg == rs) & ~E_m2reg & ~Mem_canceled)
+        //already stalled for 2 cycle, for Situation 2 described above.
+        else if (need_rs & M_RegWrite & (M_TargetReg!=0) & (M_TargetReg == rs) & ~M_m2reg & ~M_canceled)
             regA = M_AluOut;
         //For other situations, if there is no RAW hazard, no bypass needed.
         //If the pipeline has stalled for two cycles for situation 2 described above, or
@@ -568,152 +670,35 @@ module control_unit(
     //data forward for rt
     always @(*) begin
         //Since it is similar to rs, the comments are omitted here. 
-        if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & ~M_m2reg & ~Mem_canceled)
+        if (need_rt & EXC_RegWrite & (EXC_TargetReg!=0) & (EXC_TargetReg == rt) & ~EXC_m2reg & ~EXC_canceled)
+            regB = EXC_AluOut;
+        else if (need_rt & M_RegWrite & (M_TargetReg !=0) & (M_TargetReg == rt) & ~M_m2reg & ~M_canceled)
             regB =M_AluOut;
         else regB = qb;
     end
 
     //--------------generate cancel and stall signals for ID ------------------
-    assign Stall_IF_ID = ~ins_done | Stall_RAW;
+    assign Stall_IA_IF_ID = (~ins_done | Stall_RAW );
     
     //We have two ban signal at ID stage to avoid logic loop, ban_ID_RAW and ban_ID_EXC.
     //ban_ID_RAW has lower priority, it can't mask out the Stall_RAW but ban_ID_EXC can.
     assign ban_ID = ban_ID_RAW |ban_ID_EXC;
     
-    ////------------------------Branch and Branch Prediction----------------------
-    ////I have implement a simple static branch predictor, which always 
-    ////predicts the branch not happen. When a branch instruction is decoded and
-    ////the result of branch is calculated, CU compare the branch result with PC,
-    ////if prediction is wrong, abandon the pre-fetched instruction. 
-//
-    ////Jump target for J/Jal instruction. Different with the original MIPS 32 instruction. 
-    ////This CPU don't have delay slot, so upper bit of the target is the corresponding
-    ////bits of the address of the branch instruction itself. 
-    //wire [31:0] jpc = {ID_PC[31:28],instruction[25:0],2'b00};
-//
-    //Branch offset for conditional branch instructions. 
-    wire [31:0] br_offset = imm;
-    //Target address for conditional branch instructions. 
-    assign bpc = br_offset + ID_PC;
-
-    assign no_br_pc = ID_PC +4;
-//
-    ////Target address for jump register instructions
-    //wire [31:0] rpc = regA;
-//
-    ////Target address for eret instruction. 
-
-
-    
-    //signals for conditional branch. 
-    wire   rs_equal_0,rs_rt_equal,rs_less_than_0;
-    assign rs_equal_0 = (regA ==  32'b0);
-    assign rs_rt_equal = (regA == regB);
-    assign rs_less_than_0 = regA[31];
-
-    //select the correct branch target
-    //reg [31:0] br_target;
-    //always @(*) begin
-    //     //unconditional branch instructions
-    //    if (i_j|i_jal)          br_target = jpc;
-    //    //unconditional branch register instructions
-    //   // else if (i_jr|i_jalr)   br_target = rpc;
-    //    //return from exception
-    //    else if (i_eret)        br_target = epc;
-    //    //conditional branch instructions
-    //    //else if (((i_bgez|i_bgezal)&(~rs_less_than_0))|((i_bltz|i_bltzal)&rs_less_than_0)
-    //    //    |(i_blez&(rs_less_than_0|rs_equal_0))|(i_beq&rs_rt_equal)|(i_bne&(~rs_rt_equal))
-    //    //     |(i_bgtz&(~rs_less_than_0 & ~ rs_equal_0)));
-    //    //                        br_target = bpc;
-    //    //normal target
-    //    else                    br_target = ID_PC + 4;
-    //end
-
-
-    //These signals are used for the branch predictor. 
-    //is_branch is HIGH if current instruction in ID stage is a branch instruction. 
-    //This signal with ID_PC together, can let the branch predictor know that
-    //an address holds a branch instruction, then the BP can assign a slot for
-    //that address.
-    //assign is_branch =(i_j|i_jal|i_jr|i_jalr|i_bgez|i_bgezal|i_bltz|i_bltzal
-    //            |i_blez|i_bgtz|i_beq|i_bne|i_eret)&~ban_ID;
-    //do_branch is HIGH if a branch takes place. 
-    //This signal together with is_branch and BP_miss, can let the branch predictor 
-    //know when to update the history table. 
-    //assign do_branch = (i_j|i_jal|i_jr|i_jalr|((i_bgez|i_bgezal)&(~rs_less_than_0))
-    //            |((i_bltz|i_bltzal)&rs_less_than_0)|(i_blez&(rs_less_than_0|rs_equal_0))
-    //            |(i_beq&rs_rt_equal)|(i_bne&(~rs_rt_equal))|i_eret)&~ban_ID;
-
-    //If there's a branch, compare the branch target with the current PC, if the two
-    //are not equal, then there's a BP miss, pre-fetched instruction should be 
-    //canceled.
-    //bp_miss生成向后推，在exe级实现  
-    //assign BP_miss = is_branch? (PC != br_target) : 1'b0;
-
-    //Some of the branch instructions such as j and jal have fixed target, while
-    //some branch instructions such as jr and jalr have  variable target. 
-    //The branch predictor must understand these conditions when making predictions. 
-    //assign V_target = i_jr | i_jalr | i_eret;
-
 
     //------------------------Interrupt and Exceptions---------------------------
     //------------------------Interrupt allow signal-----------------------------
-    //interrupt and exceptions module do following things:
-    //1. determine when to respond to an interrupt request, also determine which
-    //   exception should be responded. 
-    //2. choose correct target to branch,
-    //3. do the branch, change the status register and epc register 
-    //    and generate instruction cancel signal simultaneously. 
-
-    //1A. determine when to respond to an interrupt request. 
-    //We have a status register (CP0_Reg[1]) which controls the overall interrupt
-    //mask, but other situations should also be considered:
-    //      1. Whether the instruction in ID stage is a branch instruction?
-    //      2. Whether the instruction in ID stage is a multi-cycle instruction?
-    //      3. Does the instruction in ID stage causes a pipeline hazard?
-    //      4. Are there any exceptions?
-    //      5. Whether the instruction in ID stage is mtc0?
-    //As I mentioned before, one of the purpose of using branch predictor instead 
-    //of delay slot is to reduce the complexity of the interrupt controller.
-    //For a delay slot design, to implement aN interrupt controller, the controller
-    //must know whether the instruction in ID stage is in delay slot. 
-    //I hope the controller is simple, so I use a branch predictor, and don't 
-    //response interrupt when the pipeline is not ready. 
-    //If the current instruction in ID stage is a multi-cycle instruction and not 
-    //finish it's execution yet, controller don't response interrupt ether, since
-    //the ID and IF stages are stalled by the micro-PC. 
-    //If current instruction in ID stage causes a pipeline hazard, controller don't
-    //response interrupt either, because the ID and IF stages are stalled. 
-    //Exceptions have higher priority than interrupts, when there's a exception,
-    //the controller does not response interrupts.
-    //Mtc0 is done in ID stage. It can change the value of registers in CU,
-    //processing interrupt also changes the value of these registers, so they can
-    //not happen at the same time. Mtc0 should be a high privilege instruction if
-    //there's a protected mode. Mtc0 has a higher priority than interrupt. 
-    //Simply put, the condition for accepting an interrupt request is that the 
-    //processor is in a normal state, and the pipeline is not suspended due to a 
-    //component inside the CPU.
-
     //When to response to an interrupt request
     wire int_mask = CP0_Reg[1][0];
-    wire int_allow =  int_mask &~BP_miss & ~Stall_IF_ID & ~exc_ack & ~SMC_ack
-                        &~i_mtc0 ;
 
     //When there is an external interrupt and the external interrupt is enabled,
     //or a software interrupt 
-    //or an exception occurs, the processor jumps to the base register
-    //int_rec is HIGH to indicate that CPU is going to jump to base register at
+    //or an exception occurs, the processor jumps to the BASE register
+    //int_rec is HIGH to indicate that CPU is going to jump to BASE register at
     //next clock cycle. 
-    assign int_rec = int_allow & int_in;
+    assign int_rec = int_mask & int_in;
 
-    //----------------------------self-modify code-------------------------------
-    //self modify code  has an impact on IF ID and EXE stage. 
-    wire IF_SMC, ID_SMC, EXE_SMC;
-    assign IF_SMC = (PC == M_MemAddr) & M_MemWrite;
-    assign ID_SMC = (ID_PC == M_MemAddr) & M_MemWrite & ~ID_canceled;
-    assign EXE_SMC = (EXE_PC == M_MemAddr) & M_MemWrite & ~EXE_canceled;
 
-    //------------------------processing EXC br_miss SMC and INT----------------------
+    //------------------------processing EXC br_miss EXC_SMC and INT----------------------
     //signals for update the STATUS register (CP1)
     reg update_STATUS_exc;
     reg [31:0] STATUS_exc_in,STATUS_bak_in;
@@ -722,320 +707,176 @@ module control_unit(
     reg update_CAUSE_exc;
     //Cause register is 32-bit. Each cause input has 3 bits, the cause register
     //is arranged as below:
-    //      31    |28   |25   |22   |19             0|
-    //        IF  | ID  | EXE | MEM |  interrupt     |
+    //      31          |3         0|
+    //        interrupt |    EXC    |
     reg [31:0] CAUSE_exc_in;
     //signals for update the EPC register (CP3)
     reg update_EPC_exc;
     reg [31:0] EPC_exc_in;
-    //select the right npc
-    //00 normal  (let the branch predictor decide)
-    //01 base    (normal exceptions)
-    //10 SMC_nPC (XPC for Self-modify code)
-    //11 br_target (active if there's a BP miss)
-    reg [1:0] nPC_sel;
-    reg [31:0] SMC_nPC;
-
-    //output next PC
-    always @(*)
-    begin
-        case (nPC_sel)
-            2'b00  :   next_PC = BP_target;
-            2'b01  :   next_PC = CP0_Reg[2];
-            2'b10  :   next_PC = SMC_nPC;
-            2'b11  :   next_PC = br_target;            
-        endcase
-    end
 
     //We have two ban signal at ID stage to avoid logic loop, ban_ID_RAW and ban_ID_EXC.
     //ban_ID_RAW has lower priority, it can't mask out the Stall_RAW but ban_ID_EXC can.
     //When a RAW hazard happens, Stall_RAW and Stall_ID_IF will be HIGH, so the IF and 
     //ID stage is stalled, and other stage can still run. But when ban_ID_EXC is high,
     //the RAW hazard in ID stage will be canceled. 
-    reg ban_ID_EXC;
+    wire ban_ID_EXC;
+    assign ban_ID_EXC = ban_IA_IF_ID_EXE;
+
+    //generated ban signals
+    reg ban_IA_IF_ID_EXE;
 
 
+    //calculate branch target
+    //Branch offset for conditional branch instructions. 
+    wire [31:0] br_offset = imm;
+    //Target address for conditional branch instructions. 
+    assign bpc = br_offset + ID_PC;
+
+    assign no_br_pc = ID_PC +4;
+
+    //signals for conditional branch. 
+    assign rs_equal_0 = (regA ==  32'b0);
+    assign rs_rt_equal = (regA == regB);
+    assign rs_less_than_0 = regA[31];
+
+    //Dealing with EXC \EXC_ERET\BPmiss\EXC_SMC\INT
     always @(*) begin
-        //Or the system is in normal state
-        //This is necessary because we need a default value of these signals
-            //no need to update the STATUS register
-            update_STATUS_exc =0;
-            STATUS_exc_in =0;
-            STATUS_bak_in =0;
-            //no need to update the cause register
-            update_CAUSE_exc =0;        
-            CAUSE_exc_in =0;
-            //no need to update the epc register
-            update_EPC_exc =0;  
-            EPC_exc_in =0;
-            //select the next pc as normal (let the branch predictor decide)
-            nPC_sel =2'b00;
-            SMC_nPC = PC;
-            //set all cancel signal to zero
-            ban_IF =0;
-            ban_ID_EXC = 0;
-            ban_EXE = 0;
-            ban_MEM = 0; 
-        //If exception occurs at the MEM stage
-        if (exc_MEM) begin
-            //mask out the STATUS register to disable interrupt. 
-            update_STATUS_exc =1;
-            STATUS_exc_in = CP0_Reg[1] | 32'b11111111111111111111111111111110;
-            STATUS_bak_in = CP0_Reg[1];
-            //select the MEM stage's cause
-            update_CAUSE_exc =1;
-            CAUSE_exc_in = {9'b0,MEM_cause,20'b0};
-            //save MEM_PC into epc
-            update_EPC_exc =1;
-            EPC_exc_in = MEM_PC;
-            //select the next pc as BASE
-            nPC_sel = 2'b01;
-            //generate cancel signals
-            //cancel IF ID EXE MEM here
-            ban_IF = 1;
-            ban_ID_EXC = 1;
-            ban_EXE =1;
-            ban_MEM=1;            
+        //EXC has the highest priority
+        if (EXC & ~EXC_canceled) begin
+            //If there's an exception, 
+            //EPC <- EXC_PC, STATUS: turn INT off and backup
+            //CAUSE <- EXC_code, next_PC <- BASE
+            //bansignal: ban IA IF ID EXE EXC
+            //update EPC
+                update_EPC_exc = 1;
+                EPC_exc_in = EXC_PC;
+            //update STATUS
+                update_STATUS_exc = 1;
+                //turn off interrupt
+                STATUS_exc_in = 
+                        STATUS | 32'b11111111111111111111111111111110;
+                //backup current STATUS
+                STATUS_bak_in = STATUS;
+            //update CAUSE
+                update_CAUSE_exc = 1;
+                CAUSE_exc_in = {28'b0,EXC_code};
+            //select next_PC (BASE)
+                next_PC = BASE;
+            //generating ban signals
+                ban_IA_IF_ID_EXE = 1;
+                ban_EXC =1;
         end
-        //for EXE stage, exception like overflow and self-modify code can happen at
-        //the same time. 
-        else if (exc_EXE | EXE_SMC) begin
-            //如果两种异常同时发生，则优先处理自修改代码
-            //事实上无论先处理那种异常，都不会产生错误，但是经过分析，不同的处理顺序影响
-            //系统的效率：
-            //处理SMC会忽略当前级的EXC，而处理EXC会忽略当前级的SMC。
-            //处理SMC只会引入一次跳转，处理EXC会引入两次跳转；
-            //由SMC产生的访存不可避免地会发生。
-            //因此优先处理SMC的效率高于优先处理EXC。
-            if (EXE_SMC) begin
-                //no need to update the STATUS register
-                update_STATUS_exc =0;
-                //no need to update the cause register
-                update_CAUSE_exc =0;
-                //no need to update the epc register
-                update_EPC_exc =0;
-                //select the next pc as EXE_PC
-                nPC_sel = 2'b10;
-                SMC_nPC = EXE_PC;
-                //generate cancel signals
-                //cancel IF ID EXE here
-                ban_IF =1;
-                ban_ID_EXC =1;
-                ban_EXE =1;
-                ban_MEM = 0;
-            end
-            //only has exc in exe stage
-            else   begin
-                //update the status register
-                update_STATUS_exc =1;
-                STATUS_exc_in = CP0_Reg[1] | 32'b11111111111111111111111111111110;
-                STATUS_bak_in = CP0_Reg[1];
-                //select the EXE stage's cause
-                update_CAUSE_exc =1;
-                CAUSE_exc_in = {6'b0,EXE_cause,23'b0}; 
-                //save EXE_PC into epc
-                update_EPC_exc =1;
+        //EXC_ERET and BP miss can happen at the same time
+        //EXC_ERET has higher priority
+        else if (EXC_ERET & ~EXC_canceled)begin
+            //If there's an EXC_ERET instruction
+            //EPC: no update, STATUS <- backup
+            //CAUSE: no update, next_PC <- EPC
+            //bansignal: ban IA IF ID EXE
+            //no update EPC
+                update_EPC_exc = 0;
+                EPC_exc_in = 32'b0;
+            //update STATUS
+                update_STATUS_exc = 1;
+                //turn off interrupt
+                STATUS_exc_in = STATUS_bak;
+                //backup current STATUS
+                STATUS_bak_in = STATUS;
+            //no update CAUSE
+                update_CAUSE_exc = 0;
+                CAUSE_exc_in = 32'b0;
+            //select next_PC (EPC)
+                next_PC = EPC;
+            //generating ban signals
+                ban_IA_IF_ID_EXE = 1;
+                ban_EXC =0;
+        end
+        //BP miss and EXC_SMC can't happen at the same time
+        //the priority between BP miss and EXC_SMC is not important
+        else if (EXC_BP_miss & ~EXC_canceled)begin
+            //If there's an BP miss, internel status of the processor
+            //is not changed, select Br_target as next_PC
+            //bansignal: ban IA IF ID EXE
+            //no update EPC
+                update_EPC_exc = 0;
+                EPC_exc_in = 32'b0;
+            //no update STATUS
+                update_STATUS_exc = 0;
+                STATUS_exc_in = 32'b0;
+                STATUS_bak_in = 32'b0;
+            //no update CAUSE
+                update_CAUSE_exc = 0;
+                CAUSE_exc_in = 32'b0;
+            //select next_PC (Br_Target)
+                next_PC = EXC_Br_target;
+            //generating ban signals
+                ban_IA_IF_ID_EXE = 1;
+                ban_EXC =0;
+
+        end
+        else if (EXC_SMC & ~EXC_canceled)begin
+            //If there's an EXC_SMC, internel status of the processor
+            //is not changed, select EXE_PC as next_PC
+            //bansignal: ban IA IF ID EXE
+            //no update EPC
+                update_EPC_exc = 0;
+                EPC_exc_in = 32'b0;
+            //no update STATUS
+                update_STATUS_exc = 0;
+                STATUS_exc_in = 32'b0;
+                STATUS_bak_in = 32'b0;
+            //no update CAUSE
+                update_CAUSE_exc = 0;
+                CAUSE_exc_in = 32'b0;
+            //select next_PC (EXE_PC)
+                next_PC = EXE_PC;
+            //generating ban signals
+                ban_IA_IF_ID_EXE = 1;
+                ban_EXC =0;
+        end
+        //If every thing is normal in EXC stage and the INT is allowed
+        //accept interrupt request
+        else if (int_in & int_mask & EXC_ins_done & ~EXC_mtc0)begin
+            //When dealing with interrupt
+            //EPC <- EXE_PC, STATUS: turn INT off and backup
+            //CAUSE <- INT vector, next_PC <- BASE
+            //bansignal: ban IA IF ID EXE
+            //update EPC
+                update_EPC_exc = 1;
                 EPC_exc_in = EXE_PC;
-                //select the next pc as BASE
-                nPC_sel = 2'b01;
-                //generate cancel signals
-                //cancel IF ID EXE here
-                ban_IF =1;
-                ban_ID_EXC =1;
-                ban_EXE =1;
-                ban_MEM = 0;
-            end
+            //update STATUS
+                update_STATUS_exc = 1;
+                //turn off interrupt
+                STATUS_exc_in = 
+                            STATUS | 32'b11111111111111111111111111111110;
+                //back up status register
+                STATUS_bak_in = STATUS;
+            //update CAUSE
+                update_CAUSE_exc = 1;
+                CAUSE_exc_in = {int_num,4'b0000};
+            //select next_PC (BASE)
+                next_PC = BASE;
+            //generating ban signals
+                ban_IA_IF_ID_EXE = 1;
+                ban_EXC =0;
         end
-        /*为了提高时钟频率，将分支预测失败的检测放在EXE级的电路中，当EXE级电路检测到分支
-        预测失败时，ID级和IF级均已加载错误的指令，因此将他们废弃，并将下一跳设置为正确的
-        跳转目标。这样做大幅提高了CPU的时钟频率，但是在分支预测失败时引入了额外一周期的代
-        价，因为ID级的指令也要被撤销。
-        */
-        else if (exc_ID | ID_SMC |BP_miss) begin
-            //If there's a branch prediction miss, handle it first
-            if (BP_miss) begin
-                //no need to update the STATUS register
-                update_STATUS_exc =0;
-                //no need to update the cause register
-                update_CAUSE_exc =0;             
-                //no need to update the epc register
-                update_EPC_exc =0;
-                //select the next pc as correct branch target
-                nPC_sel = 2'b11;
-                //generate cancel signals
-
-                ban_IF =1;
-                ban_ID_EXC =1;
-                ban_EXE = 0;
-                ban_MEM = 0;                   
-            end
-            //self-modify code has higher priority as mentioned above
-            else if (ID_SMC) begin
-                //no need to update the STATUS register
-                update_STATUS_exc =0;
-                //no need to update the cause register
-                update_CAUSE_exc =0;
-                //no need to update the epc register
-                update_EPC_exc =0;
-                //select the next pc as ID_PC
-                nPC_sel = 2'b10;
-                SMC_nPC = ID_PC;
-                //generate cancel signals
-                //cancel IF ID here
-                ban_IF =1;
-                ban_ID_EXC =1;
-                ban_EXE = 0;
-                ban_MEM = 0;                   
-            end
-            //only has exc in ID stage
-            else begin
-                //update the status register
-                update_STATUS_exc =1;
-                STATUS_exc_in = CP0_Reg[1] | 32'b11111111111111111111111111111110;
-                STATUS_bak_in = CP0_Reg[1];
-                //select the ID stage's cause
-                update_CAUSE_exc =1;
-                CAUSE_exc_in = {3'b0,ID_cause,26'b0};
-                //save ID_PC into epc
-                update_EPC_exc = 1;
-                EPC_exc_in = ID_PC;
-                //select the next pc as BASE
-                nPC_sel = 2'b01;
-                //generate cancel signals
-                //cancel IF ID here
-                ban_IF =1;
-                ban_ID_EXC =1;
-                ban_EXE = 0;
-                ban_MEM = 0;   
-            end
-        end
-        //for IF stage, EXC SMC and BP miss can happen at the same time. 
-        //Priority of these different situations must be considered. 
-        //IF级的异常处理最复杂，除了有分支预测错误之外，还受到ID级产生的多周期、写后读引起
-        //的IF ID级暂停影响。
-        //首先确定EXC\SMC\BP_miss三者的优先级，BP miss的优先级最高，因为我们处理异常的的第
-        //一原则是不能丢失正确的处理顺序，后两者的优先级对于程序运行的正确性来说是无所谓的
-        //但正如上面所说，优先处理SMC会带来更好的性能。
-        //然后要考虑这三种情况与ID级多周期、写后读之间可能发生的冲突:
-        /*
-            1.对于BP miss
-                BP miss不会与多周期同时发生，因为当前的跳转指令均是单周期指令。但是他会和
-                写后读同时发生，如果不正确处理，正确的跳转目标会因为写后读引起的ID IF级暂
-                停被错过。因此这里在is branch信号中加入了&~ban_ID，只有当ID级的跳转指令
-                是有效的，也就是说写后读被数据旁路和流水线暂停解决后，才可能触发BP miss，这
-                样有效的目标就不会因为流水线部分暂停而错过。
-            2.对于SMC
-                SMC会与多周期和写后读同时发生，SMC异常因为MEM级的写入请求产生，而多周期和
-                写后读仅会暂停IF和ID级，因此当他们同时发生时，如果不进行特殊的处理IF级就会
-                错过SMC，将受MEM级写入影响的旧指令送入下一级流水线。这里的处理是结合cache
-                中引入的cancel机制。cache中引入cancel机制原本的目的是规避总线无法处理撤销
-                请求的缺陷，但是考虑到SMC信号生成的时机恰好是新的请求写入MEM级的流水线寄存
-                器的时刻，在这个时候CPU是没有Stall的，I cache的请求已经完成，根据cache的撤
-                销机制，可以知道此时req_sent清零，在这个时刻，cache的请求尚未向总线发出，
-                可以直接撤销。因此，撤销机制可以保证在IF和ID级寄存器写入受阻时，仍能撤销当
-                前受到SMC影响的请求，而SMC请求将npc设置成当前pc，PC的值不需要改变，这和IF
-                级暂停并不冲突。之前对于cache同步机制的要求是总线事务至少需要两个周期，这
-                是因为需要一个周期比对总线上的请求是否在cache中，但是现在SMC由CU进行检测，
-                当MEM级存在一个使当前IF级受影响的请求时，可以在下一个时钟上跳直接废弃改指
-                令而与此同时cache内部也将监听到总线的请求在下一个时钟上跳即可进行valid bit
-                清零操作。
-            3.对于EXC
-                由于EXC只和当前IF级有关，因此，由于ID级产生的IF和ID级暂停不会修改IF级的内
-                容，EXC也不会因为多周期和RAW被错过。
-        */
-        /*
-        经过综合和时序分析发现，为分支计算正确的目标地址并检查是否预测失败需要花费大量的
-        时间，将分支预测检查放在ID级会使整个CPU的频率大幅下降，因此我将对于分支预测的检查
-        向后推入EXE级，这样对于分支预测的处理将放在对ID级异常进行处理的块内。这样做提高了
-        CPU的时钟频率，但是会使分支预测失败带来的惩罚增加，当分支预测失败时需要同时废弃IF
-        和ID级。
-        */
-        else if (exc_IF | IF_SMC )begin
-            //otherwise, if there's a SMC in IF stage
-            if (IF_SMC) begin
-                //no need to update the STATUS register
-                update_STATUS_exc =0;
-                //no need to update the cause register
-                update_CAUSE_exc =0;               
-                //no need to update the epc register
-                update_EPC_exc =0;  
-                //select the next pc as PC
-                nPC_sel = 2'b10;
-                SMC_nPC = PC;
-                //generate cancel signals
-                //only cancel IF stage
-                //ban_IF can work with the cancel mechanism within the cache
-                ban_IF =1;
-                ban_ID_EXC =0;
-                ban_EXE = 0;
-                ban_MEM = 0;                    
-            end
-            //only has exc in IF stage
-            else begin
-                //update the status register
-                update_STATUS_exc =1;
-                STATUS_exc_in = CP0_Reg[1] | 32'b11111111111111111111111111111110;
-                STATUS_bak_in = CP0_Reg[1];
-                //select the IF stage's cause
-                update_CAUSE_exc =1;
-                CAUSE_exc_in = {IF_cause,29'b0};
-                //save PC into epc
-                update_EPC_exc = 1;
-                EPC_exc_in = PC; 
-                //select the next pc as BASE
-                nPC_sel = 2'b01;
-                //generate cancel signals
-                //only cancel IF here
-                ban_IF =1;
-                ban_ID_EXC = 0;
-                ban_EXE = 0;
-                ban_MEM = 0;
-            end
-        end
-        //interrupt only answered when the system is ready
-        else if (int_rec) begin
-                //update the status register
-                update_STATUS_exc =1;
-                STATUS_exc_in = CP0_Reg[1] | 32'b11111111111111111111111111111110;
-                STATUS_bak_in = CP0_Reg[1];
-                //select interrupt number as cause
-                update_CAUSE_exc =1;
-                CAUSE_exc_in = {12'b0,int_num};
-                //when there's an external interrupt and the interrupt is allowed
-                //no need to discard instructions in ID stage to handle interrupts  
-                //and when the system returns from interrupt, the difference from 
-                //the exception is that the next instruction after the interrupted 
-                //instruction is executed. So we save PC into epc and ban IF when
-                //the interrupt is processed. 
-                //save PC into epc
-                update_EPC_exc = 1;
-                EPC_exc_in = PC;
-                //select the next pc as BASE
-                nPC_sel = 2'b01;
-                //generate cancel signals
-                //only cancel IF here
-                ban_IF =1;
-                ban_ID_EXC = 0;
-                ban_EXE = 0;
-                ban_MEM = 0;     
-        end
-    end
-
-    //These two signals are used to determine whether interrupts are allowed
-    wire exc_ack = exc_IF | exc_ID | exc_EXE | exc_MEM;
-    wire SMC_ack = EXE_SMC | ID_SMC | IF_SMC;
-
-    //system call and unimplemented instruction will cause exception in ID stage. 
-    wire exc_ID = i_syscall | i_unimp;
-    //Cause of exception in ID stage is generated in ID stage itself. 
-    reg [2:0] ID_cause;
-    always @(*)
-    begin
-        if  (i_syscall)
-            ID_cause = 3'b001;
-        else if (i_unimp)
-            ID_cause = 3'b010;
+        //Normal state
         else 
-            ID_cause = 3'b000;
+            //do nothing
+            //no update EPC
+                update_EPC_exc = 0;
+                EPC_exc_in = 32'b0;
+            //no update STATUS
+                update_STATUS_exc = 0;
+                STATUS_exc_in = 32'b0;
+                STATUS_bak_in = 32'b0;
+            //no update CAUSE
+                update_CAUSE_exc = 0;
+                CAUSE_exc_in = 32'b0;
+            //select next_PC (BP_Traget)
+                next_PC = BP_target;
+            //generating ban signals
+                ban_IA_IF_ID_EXE = 0;
+                ban_EXC =0;
     end
 endmodule

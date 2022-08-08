@@ -22,7 +22,7 @@ module mmu (
     clk,
     
     //stall signal
-    stall,
+    stall
 );
 
 //This parameter determined the size of the page

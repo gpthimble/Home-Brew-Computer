@@ -57,11 +57,11 @@ module soc (
     //wire [4:0] W_TargetReg;
     
     wire [31:0] BUS_addr, BUS_data;
-    wire BUS_req, BUS_ready, BUS_RW;
+    wire BUS_req, BUS_ready, BUS_RW,clr;
     wire [7:0] DMA, grant;
     
     cpu cpu0(BUS_addr,BUS_data,BUS_RW,BUS_ready,DMA[0],DMA[1],grant[0],
-    grant[1],0
+    grant[1],1'b0
     , int_ack, int_num, clr, clk,
     //PC, next_PC,instruction_o,I_cache_ready,
     //ID_PC,BP_miss,CPU_stall,stall_IF_ID,ban_IF,ban_ID,ban_EXE,ban_MEM,
