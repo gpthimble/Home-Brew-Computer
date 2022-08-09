@@ -465,9 +465,9 @@ control_unit CU_0 (
             //4'b0011 is for syscall instruction
             //syscall instruction is treated as a spectial exception
             ID_EXC_in = 4'b0011;
-        //else if (unimp)
-        //    //4'b0100 is for unimplemented instruction exception
-        //    ID_EXC_in = 4'b0100;
+        else if (unimp)
+            //4'b0100 is for unimplemented instruction exception
+            ID_EXC_in = 4'b0100;
         else if (not_allow)
             //4'b0110 is for not allow instructions
             //This is used for the protected mode
@@ -818,7 +818,7 @@ assign E_TargetReg_out = E_link ? 5'b11111 : E_TargetReg;
 
     //check data address alignment
     wire DA_misaligned;
-    wire [1:0] DA_offset = M_AluOut[1:0];
+    wire [1:0] DA_offset = EXC_AluOut[1:0];
     assign DA_misaligned = ((EXC_LoadMask | EXC_StoreMask|EXC_NotAlign) 
                             & EXC_B_HW & DA_offset[0] |
                             ~(EXC_LoadMask | EXC_StoreMask|EXC_NotAlign) 

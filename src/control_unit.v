@@ -312,8 +312,11 @@ module control_unit(
     wire i_unimp =~(i_eret | i_mfc0 | i_mtc0 | i_syscall |i_sll | i_srl | 
                     i_sra | i_sllv | i_srlv | i_srav | i_jr | i_jalr | i_add | 
                     i_addu | i_sub | i_subu | i_and  | i_or | i_xor | i_nor | 
-                    i_slt | i_sltu);
-
+                    i_slt | i_sltu | i_clz | i_clo | i_bgez | i_bgezal | i_bltz|
+                    i_bltzal | i_beq | i_bne | i_blez | i_bgtz | i_addi | i_addiu |
+                    i_slti | i_sltiu | i_andi | i_ori | i_xori | i_lui | i_lb |
+                    i_lh | i_lw | i_lbu | i_lhu | i_sb | i_sh | i_sw | i_j | i_jal);
+  
     wire protected_mode = CP0_Reg[1][1];
     wire i_not_allow = protected_mode & (i_eret | i_mfc0 | i_mtc0);
 
@@ -861,7 +864,7 @@ module control_unit(
                 ban_EXC =0;
         end
         //Normal state
-        else 
+        else begin
             //do nothing
             //no update EPC
                 update_EPC_exc = 0;
@@ -878,5 +881,6 @@ module control_unit(
             //generating ban signals
                 ban_IA_IF_ID_EXE = 0;
                 ban_EXC =0;
+        end
     end
 endmodule

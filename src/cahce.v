@@ -168,7 +168,7 @@ parameter no_cache_end =32'hFFFFFFFC;
 localparam cache_lines = 2<< (INDEX -1);
 localparam tag_size = 32-2- INDEX;
 //default size of the cache is two 512 bytes (128 lines) set, total size is 1KB.
-parameter INDEX=1;
+parameter INDEX=7;
 parameter WIDTH=32;
 
 //------------------------------    FROM CPU  -----------------------------------
@@ -371,7 +371,8 @@ reg [cache_lines-1:0] VALID_A, VALID_B;
 //    VALID_B_out = VALID_B[index];
 //end
 
-
+//VALID_X_clr is HIGH when we need to clear the valid bit. 
+wire VALID_A_clr, VALID_B_clr, VALID_C_clr;
 //use ram_2w1r for valid bits
 wire VALID_A_out;
 ram_2w1r         #(.WIDTH(1), .DEEPTH(INDEX)) 
@@ -383,7 +384,7 @@ wire VALID_B_out;
 ram_2w1r        #(.WIDTH(1), .DEEPTH(INDEX))
                 valid_B (index_reg, index_sync_reg,index,
                 1'b1       , 1'b0             , VALID_B_out,
-                 WE_B     , VALID_A_clr   , 1'b1,
+                 WE_B     , VALID_B_clr   , 1'b1,
                  clk);
 
 
@@ -556,8 +557,7 @@ assign cache_sync_B = ~BUS_grant_reg & BUS_RW_reg & (tag_sync_reg == TAG_B_sync_
 assign cache_sync_C = ~BUS_grant_reg & BUS_RW_reg & NO_CACHE & HIT_C
                         & (BUS_addr_reg == addr_reg);
 
-//VALID_X_clr is HIGH when we need to clear the valid bit. 
-wire VALID_A_clr, VALID_B_clr, VALID_C_clr;
+
 
 //There are two situations here:
 //  1. The monitored request is different from the request to the cache
